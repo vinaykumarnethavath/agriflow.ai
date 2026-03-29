@@ -149,7 +149,7 @@ async def _update_order_status_on_payment(payment: Payment, session: AsyncSessio
     elif payment.payment_for == "shop_order" and payment.reference_id:
         order = await session.get(ShopOrder, payment.reference_id)
         if order:
-            order.status = "completed"
+            order.payment_status = "paid"
             order.payment_mode = "razorpay"
             session.add(order)
 

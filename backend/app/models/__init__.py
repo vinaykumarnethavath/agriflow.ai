@@ -1,6 +1,7 @@
 from .user import User, UserCreate, UserRead, UserRole, UserLogin, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest
 from .crop import Crop, CropCreate, CropRead, CropUpdate, CropExpense, CropExpenseCreate, CropExpenseRead, CropHarvest, CropHarvestCreate, CropHarvestRead, CropExpenseWithCrop
-from .trade import Product, ProductCreate, ProductRead, ShopOrder, ShopOrderCreate, ShopOrderRead, ShopOrderItem, ShopOrderItemBase, TraceabilityEvent
+from .trade import Product, ProductCreate, ProductRead, ShopOrder, ShopOrderCreate, ShopOrderRead, ShopOrderItem, ShopOrderItemBase, TraceabilityEvent, ShopOrderStatusUpdate
+from .expense import ShopExpense, ShopExpenseCreate, ShopExpenseRead
 from .user_otp import UserOTP
 from .farmer import FarmerProfile, FarmerProfileCreate, FarmerProfileRead, LandRecord, LandRecordBase
 from .manufacturer import (
@@ -15,3 +16,4 @@ from .customer import (
 )
 from .shop import ShopProfile, ShopProfileCreate, ShopProfileRead
 from .payment import Payment, PaymentCreateRequest, PaymentVerifyRequest, PaymentRead
+from .shop_accounting import ShopAccountingExpense, ShopAccountingExpenseCreate, ShopAccountingExpenseRead

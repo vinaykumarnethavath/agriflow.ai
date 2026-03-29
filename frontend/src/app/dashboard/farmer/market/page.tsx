@@ -39,8 +39,13 @@ interface Product {
     batch_number: string;
     description?: string;
     image_url?: string;
+    product_image_url?: string;
     user_id: number;
     seller_name?: string;
+    unit?: string;
+    quantity_per_unit?: number;
+    manufacture_date?: string;
+    main_composition?: string;
 }
 
 interface CartItem {
@@ -58,16 +63,24 @@ interface OrderItem {
     quantity: number;
     unit_price: number;
     subtotal: number;
+    image_url?: string;
+    product_image_url?: string;
+    brand?: string;
+    manufacturer?: string;
+    main_composition?: string;  // Product composition for farmer visibility
 }
 
 interface Order {
     id: number;
     shop_id: number;
+    shop_name?: string;
     farmer_id?: number;
     total_amount: number;
     discount: number;
     final_amount: number;
     payment_mode: string;
+    payment_status?: string;
+    payment_id?: string;
     status: string;
     created_at: string;
     items?: OrderItem[];
@@ -100,6 +113,7 @@ export default function MarketPage() {
     const [placingOrder, setPlacingOrder] = useState(false);
     const [paymentMode, setPaymentMode] = useState<"cash" | "razorpay">("razorpay");
     const [mockOptions, setMockOptions] = useState<any>(null);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     const categories = [
         { id: "all", name: "All Products", icon: Package },
@@ -149,6 +163,7 @@ export default function MarketPage() {
         try {
             await api.put(`/orders/${orderId}/status`, null, { params: { status: "cancelled" }});
             fetchOrders();
+            fetchProducts();
         } catch (error) {
             console.error(error);
             alert("Failed to cancel order.");
@@ -216,95 +231,92 @@ export default function MarketPage() {
                 shopGroups[shopId].push(item);
             }
 
-            const confirmAndCreateOrders = async (finalMode: "cash" | "razorpay") => {
-                // Create one order per shop
-                for (const shopId in shopGroups) {
-                    const items = shopGroups[shopId].map(item => ({
-                        product_id: item.product.id,
-                        quantity: item.quantity,
-                    }));
+            for (const shopId in shopGroups) {
+                const items = shopGroups[shopId].map(item => ({
+                    product_id: item.product.id,
+                    quantity: item.quantity,
+                }));
 
-                    await api.post("/orders/", {
-                        items,
-                        payment_mode: finalMode,
-                        discount: 0,
-                    });
-                }
-
-                setCart([]);
-                setOrderPlaced(true);
-                fetchOrders();
-                fetchProducts(); // Refresh stock
-                setTimeout(() => {
-                    setOrderPlaced(false);
-                    setShowCart(false);
-                }, 3000);
-            };
-
-            if (paymentMode === "razorpay") {
-                const { createPaymentOrder, verifyPayment, getRazorpayConfig } = await import("@/lib/payment-api");
-                const config = await getRazorpayConfig();
-                
-                const paymentOrder = await createPaymentOrder({
-                    amount: cartTotal,
-                    payment_for: "farmer_market_purchase",
+                await api.post("/orders/", {
+                    items,
+                    payment_mode: paymentMode, // "cash" or "razorpay"
+                    discount: 0,
                 });
-
-                const options = {
-                    key: config.key_id,
-                    amount: Math.round(cartTotal * 100),
-                    currency: "INR",
-                    name: "AgriChain Market",
-                    description: `Purchase of ${cartItemCount} items`,
-                    order_id: paymentOrder.razorpay_order_id,
-                    theme: { color: "#16a34a" },
-                    handler: async (response: any) => {
-                        try {
-                            await verifyPayment({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                            });
-                            // Create orders marked as razorpay
-                            await confirmAndCreateOrders("razorpay");
-                        } catch (err) {
-                            alert("Payment verification failed.");
-                        } finally {
-                            setPlacingOrder(false);
-                        }
-                    },
-                    modal: {
-                        ondismiss: () => setPlacingOrder(false)
-                    }
-                };
-
-                if (config.key_id.startsWith("rzp_test_placeholder")) {
-                    setMockOptions(options);
-                    return; // wait for mock to call handler natively
-                }
-
-                if (!(window as any).Razorpay) {
-                    await new Promise<void>((resolve, reject) => {
-                        const script = document.createElement("script");
-                        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-                        script.onload = () => resolve();
-                        script.onerror = () => reject();
-                        document.body.appendChild(script);
-                    });
-                }
-
-                const razorpay = new (window as any).Razorpay(options);
-                razorpay.open();
-                return; // let the handler finish it
             }
 
-            // Cash flow
-            await confirmAndCreateOrders("cash");
+            alert(`Order requests sent successfully! Shop owners will review them.`);
+            setCart([]);
+            setOrderPlaced(true);
+            fetchOrders();
+            fetchProducts();
+            setTimeout(() => {
+                setOrderPlaced(false);
+                setShowCart(false);
+                setPaymentMode("cash");
+            }, 3000);
 
         } catch (error: any) {
-            console.error("Failed to place order:", error);
-            alert(error?.response?.data?.detail || "Failed to place order. Please try again.");
+            console.error("Failed to request order:", error);
+            alert(error?.response?.data?.detail || "Failed to request order. Please try again.");
+        } finally {
             setPlacingOrder(false);
+        }
+    };
+
+    const handlePayNow = async (order: Order) => {
+        try {
+            const { getRazorpayConfig, createPaymentOrder, verifyPayment } = await import("@/lib/payment-api");
+            const config = await getRazorpayConfig();
+            const paymentOrder = await createPaymentOrder({
+                amount: order.final_amount,
+                payment_for: "shop_order",
+                reference_id: order.id,
+                notes: "Deferred Farmer Payment"
+            });
+
+            const options = {
+                key: config.key_id,
+                amount: paymentOrder.amount * 100,
+                currency: "INR",
+                name: "AgriChain Market",
+                description: `Payment for Order #${order.id}`,
+                order_id: paymentOrder.razorpay_order_id,
+                theme: { color: "#16a34a" },
+                handler: async (response: any) => {
+                    try {
+                        await verifyPayment({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                        });
+                        alert("Payment successful!");
+                        fetchOrders();
+                    } catch (err) {
+                        alert("Payment verification failed.");
+                    }
+                }
+            };
+            
+            if (config.key_id.startsWith("rzp_test_placeholder")) {
+                setMockOptions(options);
+                return;
+            }
+
+            if (!(window as any).Razorpay) {
+                await new Promise<void>((resolve, reject) => {
+                    const script = document.createElement("script");
+                    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+                    script.onload = () => resolve();
+                    script.onerror = () => reject();
+                    document.body.appendChild(script);
+                });
+            }
+
+            const razorpay = new (window as any).Razorpay(options);
+            razorpay.open();
+        } catch (error) {
+            console.error("Razorpay initiation failed", error);
+            alert("Could not initialize payment window.");
         }
     };
 
@@ -383,9 +395,15 @@ export default function MarketPage() {
                                 <CardContent className="p-5">
                                     <div className="flex justify-between items-start mb-3">
                                         <div>
-                                            <p className="font-bold text-gray-800 text-lg">Order #{order.id}</p>
-                                            <p className="text-sm text-gray-500">
-                                                {new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <p className="font-bold text-gray-800 text-lg">Order #{order.id}</p>
+                                                {order.shop_name && <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200"><Store className="h-3 w-3 inline mr-1" />{order.shop_name}</span>}
+                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200 capitalize"><CreditCard className="h-3 w-3 inline mr-1" />{order.payment_mode}</span>
+                                            </div>
+                                            <p className="text-sm text-gray-500 flex items-center gap-2">
+                                                <span>{new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                <span>|</span>
+                                                <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute:'2-digit' })}</span>
                                             </p>
                                         </div>
                                         <div className="text-right">
@@ -396,20 +414,52 @@ export default function MarketPage() {
                                                     {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                                 </span>
                                                 {order.status === 'pending' && (
-                                                    <Button size="sm" variant="outline" onClick={() => handleCancelOrder(order.id)} className="h-7 text-xs text-red-600 border-red-200 hover:bg-red-50">
+                                                    <Button size="sm" variant="outline" onClick={() => handleCancelOrder(order.id)} className="h-7 text-xs text-red-600 border-red-200 hover:bg-red-50 mt-1">
                                                         <Trash2 className="h-3 w-3 mr-1" /> Cancel
                                                     </Button>
+                                                )}
+                                                {order.status === "confirmed" && order.payment_mode === "razorpay" && order.payment_status !== "paid" && (
+                                                    <Button size="sm" onClick={() => handlePayNow(order)} className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white mt-1">
+                                                        Pay Now
+                                                    </Button>
+                                                )}
+                                                {order.payment_status === "paid" && (
+                                                    <span className="text-xs text-green-700 font-bold mt-1 bg-green-100 px-2 py-0.5 rounded-full border border-green-200">Paid ✅</span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                     {order.items && order.items.length > 0 && (
-                                        <div className="border-t border-gray-100 pt-3 mt-3">
+                                        <div className="border-t border-gray-100 pt-3 mt-3 space-y-3">
                                             {order.items.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between text-sm py-1">
-                                                    <span className="text-gray-600">{item.product_name} × {item.quantity}</span>
-                                                    <span className="font-medium text-gray-800">₹{item.subtotal.toLocaleString()}</span>
-                                                </div>
+                                                        <div key={idx} className="flex justify-between items-start text-sm py-2 border-b border-gray-50 last:border-0">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-12 h-12 rounded bg-gray-100 flex-shrink-0 overflow-hidden border">
+                                                                    {item.image_url || item.product_image_url ? (
+                                                                        <img src={item.image_url || item.product_image_url} alt={item.product_name} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-gray-400"><Package className="h-5 w-5" /></div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-semibold text-gray-800">{item.product_name}</div>
+                                                                    <div className="text-xs text-gray-500 mt-0.5">
+                                                                        {item.brand || item.manufacturer ? <span className="text-emerald-700 font-medium">{item.brand || item.manufacturer}</span> : ''}{item.brand || item.manufacturer ? ' • ' : ''}Qty: {item.quantity}
+                                                                    </div>
+                                                                    {item.main_composition && (
+                                                                        <div className="mt-1">
+                                                                            <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-100 font-medium">
+                                                                                🧪 {item.main_composition}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right flex-shrink-0">
+                                                                <div className="font-medium text-gray-800">₹{item.subtotal.toLocaleString()}</div>
+                                                                <div className="text-xs text-gray-400">₹{item.unit_price} each</div>
+                                                            </div>
+                                                        </div>
                                             ))}
                                         </div>
                                     )}
@@ -464,8 +514,8 @@ export default function MarketPage() {
                                         <div className="flex items-center gap-4">
                                             {/* Product Image */}
                                             <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                                {item.product.image_url ? (
-                                                    <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+                                                {item.product.image_url || item.product.product_image_url ? (
+                                                    <img src={item.product.image_url || item.product.product_image_url} alt={item.product.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-2xl">
                                                         {item.product.category === 'fertilizer' ? '🌿' : item.product.category === 'pesticide' ? '🧴' : item.product.category === 'seeds' ? '🌱' : '📦'}
@@ -560,7 +610,7 @@ export default function MarketPage() {
                                             disabled={placingOrder}
                                             className="w-full bg-white text-green-700 hover:bg-green-50 font-bold px-8 py-6 text-lg"
                                         >
-                                            {placingOrder ? "Processing..." : (paymentMode === "razorpay" ? "Pay Securely" : "Place Order")}
+                                            {placingOrder ? "Processing..." : "Request Order"}
                                         </Button>
                                 </div>
                             </CardContent>
@@ -683,10 +733,16 @@ export default function MarketPage() {
                                 className="border-gray-200 hover:border-green-300 hover:shadow-lg transition-all group overflow-hidden"
                             >
                                 {/* Product Image */}
-                                <div className="w-full h-44 bg-gray-50 overflow-hidden relative">
-                                    {product.image_url ? (
+                                <div 
+                                    className="w-full h-44 bg-gray-50 overflow-hidden relative cursor-pointer"
+                                    onClick={() => {
+                                        const imgUrl = product.image_url || product.product_image_url;
+                                        if (imgUrl) setSelectedImage(imgUrl);
+                                    }}
+                                >
+                                    {product.image_url || product.product_image_url ? (
                                         <img
-                                            src={product.image_url}
+                                            src={product.image_url || product.product_image_url}
                                             alt={product.name}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         />
@@ -708,26 +764,49 @@ export default function MarketPage() {
                                 </div>
 
                                 <CardContent className="p-4">
-                                    {/* Product Name */}
-                                    <h3 className="font-bold text-lg text-gray-800 group-hover:text-green-700 transition-colors">
-                                        {getShortName(product)}
-                                    </h3>
-                                    {product.brand && (
-                                        <p className="text-xs text-gray-500 mb-1">{product.brand}</p>
-                                    )}
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-lg text-gray-800 group-hover:text-green-700 transition-colors line-clamp-1">
+                                            {getShortName(product)}
+                                        </h3>
+                                        {product.brand && (
+                                            <p className="text-xs text-gray-500 mb-1">{product.brand}</p>
+                                        )}
 
-                                    {/* Shop Name */}
-                                    {product.seller_name && (
-                                        <button
-                                            onClick={() => setSelectedShop(product.user_id)}
-                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 mb-2 transition-colors cursor-pointer"
-                                        >
-                                            <Store className="h-3 w-3" /> {product.seller_name}
-                                        </button>
-                                    )}
+                                        {/* Shop Name */}
+                                        {product.seller_name && (
+                                            <button
+                                                onClick={() => setSelectedShop(product.user_id)}
+                                                className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 mb-2 transition-colors cursor-pointer"
+                                            >
+                                                <Store className="h-3 w-3" /> {product.seller_name}
+                                            </button>
+                                        )}
+                                        
+                                        {/* Pack Size & Dates */}
+                                        <div className="flex flex-wrap gap-2 mb-3">
+                                            {product.quantity_per_unit && product.unit && (
+                                                <span className="text-[10px] bg-green-50 text-green-700 font-bold px-2 py-0.5 rounded-full border border-green-100 flex items-center gap-1">
+                                                    <Package className="h-3 w-3" />
+                                                    {product.quantity_per_unit} {product.unit} pack
+                                                </span>
+                                            )}
+                                            {product.manufacture_date && (
+                                                <span className="text-[10px] bg-sky-50 text-sky-700 font-medium px-2 py-0.5 rounded-full border border-sky-100">
+                                                    Mfg: {new Date(product.manufacture_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {product.main_composition && (
+                                            <div className="mt-1 mb-2">
+                                                <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded inline-block">
+                                                    <span className="font-semibold">Composition:</span> {product.main_composition}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
 
                                     {/* Price and Stock */}
-                                    <div className="flex justify-between items-end mb-3">
+                                    <div className="flex justify-between items-end mb-3 mt-auto">
                                         <div>
                                             <p className="text-2xl font-bold text-green-700">₹{product.price}</p>
                                             <p className="text-xs text-gray-500">per unit</p>
@@ -787,6 +866,29 @@ export default function MarketPage() {
                 </div>
             )}
             {mockOptions && <MockRazorpayPopup options={mockOptions} onClose={() => { setMockOptions(null); setPlacingOrder(false); }} />}
+            
+            {/* Image Lightbox */}
+            {selectedImage && (
+                <div 
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <div className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center">
+                        <button 
+                            className="absolute top-0 right-0 md:top-4 md:right-4 text-white bg-black/50 hover:bg-black/80 rounded-full p-2 transition-colors z-10"
+                            onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                        <img 
+                            src={selectedImage} 
+                            alt="Full View" 
+                            className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

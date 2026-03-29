@@ -4,14 +4,16 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Factory, Truck, ShoppingCart, IndianRupee, Package, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Factory, Truck, ShoppingCart, IndianRupee, Package, ArrowUpRight, ArrowDownRight, User } from "lucide-react";
 import Link from "next/link";
-import { getManufacturerStats, ManufacturerStats } from "@/lib/api";
+import api, { getManufacturerStats, ManufacturerStats } from "@/lib/api";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function ManufacturerDashboard() {
     const { user } = useAuth();
+    const relationMap: { [key: string]: string } = { "son_of": "S/o", "wife_of": "W/o", "daughter_of": "D/o", "S/O": "S/o", "W/O": "W/o", "D/O": "D/o" };
     const [stats, setStats] = useState<ManufacturerStats | null>(null);
+    const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -20,10 +22,14 @@ export default function ManufacturerDashboard() {
 
     const fetchStats = async () => {
         try {
-            const data = await getManufacturerStats();
-            setStats(data);
+            const [statsData, profileRes] = await Promise.all([
+                getManufacturerStats(),
+                api.get("/manufacturer/profile").catch(() => ({ data: null }))
+            ]);
+            setStats(statsData);
+            if (profileRes?.data) setProfile(profileRes.data);
         } catch (error) {
-            console.error("Failed to fetch manufacturer stats:", error);
+            console.error("Failed to fetch manufacturer stats or profile:", error);
         } finally {
             setLoading(false);
         }
@@ -33,8 +39,23 @@ export default function ManufacturerDashboard() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-gray-800">Mill Dashboard</h1>
-            <p className="text-gray-500">Welcome back, {user?.full_name}</p>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-bold text-gray-800">{profile?.mill_name || "Mill Dashboard"}</h1>
+                        <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-md font-mono">ID: {profile?.mill_id || profile?.id || "—"}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 flex items-center gap-1">
+                        <User className="w-4 h-4 text-blue-600" />
+                        Owner: <span className="font-semibold text-gray-800">{profile?.owner_name || user?.full_name}</span>
+                        {profile?.father_name && (
+                            <span className="ml-2 bg-white/80 px-2 py-0.5 rounded border border-gray-100 text-gray-500 text-xs font-medium">
+                                {relationMap[profile?.relation_type || ""] || profile?.relation_type || "S/o"}: <span className="text-gray-700">{profile.father_name}</span>
+                            </span>
+                        )}
+                    </p>
+                </div>
+            </div>
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

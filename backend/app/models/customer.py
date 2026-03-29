@@ -72,6 +72,7 @@ class CustomerOrderItemRead(SQLModel):
 # --- Customer Profile ---
 class CustomerProfileBase(SQLModel):
     father_name: str
+    relation_type: Optional[str] = "S/O"  # "S/O", "W/O", "D/O"
     id_number: str # Aadhaar/PAN
     
     # Detailed Address

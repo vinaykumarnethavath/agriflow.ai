@@ -223,6 +223,7 @@ export default function CropDetailPage() {
         price_per_quintal: 0,
         quantity_quintals: 0,
         total_bags: 0,
+        bag_size: 50,
         payment_mode: "Cash",
         notes: "",
     });
@@ -1287,8 +1288,32 @@ export default function CropDetailPage() {
                                             <Input
                                                 type="number"
                                                 value={sellForm.total_bags || ""}
-                                                onChange={(e) => setSellForm({ ...sellForm, total_bags: Number(e.target.value) })}
+                                                onChange={(e) => {
+                                                    const total = Number(e.target.value);
+                                                    setSellForm({
+                                                        ...sellForm,
+                                                        total_bags: total,
+                                                        quantity_quintals: Number(((total * (sellForm.bag_size || 50)) / 100).toFixed(2))
+                                                    });
+                                                }}
                                                 placeholder="e.g., 20"
+                                                className="text-gray-800"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-700">Bag Size (kg each)</label>
+                                            <Input
+                                                type="number"
+                                                value={sellForm.bag_size || ""}
+                                                onChange={(e) => {
+                                                    const size = Number(e.target.value);
+                                                    setSellForm({
+                                                        ...sellForm,
+                                                        bag_size: size,
+                                                        quantity_quintals: Number(((sellForm.total_bags * size) / 100).toFixed(2))
+                                                    });
+                                                }}
+                                                placeholder="e.g., 50"
                                                 className="text-gray-800"
                                             />
                                         </div>
@@ -1298,7 +1323,7 @@ export default function CropDetailPage() {
                                                 type="number"
                                                 value={sellForm.quantity_quintals || ""}
                                                 onChange={(e) => setSellForm({ ...sellForm, quantity_quintals: Number(e.target.value) })}
-                                                placeholder="e.g., 50"
+                                                placeholder="e.g., 5"
                                                 className="text-gray-800"
                                             />
                                         </div>
@@ -1368,6 +1393,7 @@ export default function CropDetailPage() {
                                                         price_per_quintal: 0,
                                                         quantity_quintals: 0,
                                                         total_bags: 0,
+                                                        bag_size: 50,
                                                         payment_mode: "Cash",
                                                         notes: "",
                                                     });
@@ -1413,7 +1439,7 @@ export default function CropDetailPage() {
                                                         )}
                                                     </div>
                                                     <p className="text-sm text-gray-500">
-                                                        {listing.total_bags > 0 && `${listing.total_bags} bags • `}
+                                                        {listing.total_bags > 0 && `${listing.total_bags} bags (${listing.bag_size || 50} kg) • `}
                                                         {listing.quantity_quintals} quintals @ ₹{listing.price_per_quintal}/quintal
                                                     </p>
                                                     <p className="text-xs text-gray-400 mt-1">

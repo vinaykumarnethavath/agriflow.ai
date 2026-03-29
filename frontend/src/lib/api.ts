@@ -20,6 +20,20 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401 && typeof window !== 'undefined') {
+            // Token expired or invalid
+            console.warn("Authentication error, redirecting to login");
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export interface Crop {
     id: number;
     user_id: number;
@@ -193,15 +207,23 @@ export interface Product {
     short_name?: string;
     category: string;
     brand?: string;
+    manufacturer?: string;
     price: number;
     cost_price?: number;
     quantity: number;
     unit: string;
+    measure_unit?: string;
+    quantity_per_unit?: number;
     batch_number: string;
     description?: string;
-    expiry_date?: string;
+    main_composition?: string;
+    manufacture_date?: string;
+    image_url?: string;
+    product_image_url?: string;
+    low_stock_threshold?: number;
     user_id: number;
     traceability_json?: string;
+    expiry_date?: string;
 }
 
 export interface ShopOrderItem {
@@ -222,18 +244,101 @@ export interface ShopOrder {
     discount: number;
     final_amount: number;
     payment_mode: string;
+    payment_status?: string;
+    payment_id?: string;
     status: string;
     created_at: string;
     items?: ShopOrderItem[];
+    total_expenses?: number;
+    total_cost?: number;
+    profit?: number;
+}
+
+export interface ShopOrderStatusUpdate {
+    status?: string;
+    discount?: number;
+    expense_transportation?: number;
+    expense_labour?: number;
+    expense_other?: number;
+    expense_notes?: string;
 }
 
 export interface ShopAnalytics {
-    total_products: number;
-    total_stock: number;
-    today_sales: number;
-    month_revenue: number;
-    low_stock_count: number;
+  total_products: number;
+  total_stock: number;
+  today_sales: number;
+  month_revenue: number;
+  low_stock_count: number;
+  pending_orders: number;
 }
+
+// Revenue report interface (from /analytics/shop/revenue)
+export interface RevenueReport {
+  total_revenue: number;
+  total_cost: number;
+  total_expenses: number;
+  profit: number;
+  total_orders: number;
+  completed_orders: number;
+  pending_orders: number;
+  avg_ticket: number;
+}
+
+export const getShopRevenue = async (period?: string) => {
+  const url = period ? `/analytics/shop/revenue?period=${period}` : "/analytics/shop/revenue";
+  const response = await api.get<RevenueReport>(url);
+  return response.data;
+};
+
+export interface CategoryRevenue {
+  category: string;
+  revenue: number;
+  qty_sold: number;
+}
+
+export const getCategoryRevenue = async (period?: string) => {
+  const url = period ? `/analytics/shop/category-revenue?period=${period}` : "/analytics/shop/category-revenue";
+  const response = await api.get<CategoryRevenue[]>(url);
+  return response.data;
+};
+
+export interface ShopOrderDetailed {
+  id: number;
+  shop_id: number;
+  farmer_id?: number;
+  farmer_name?: string;
+  total_amount: number;
+  discount: number;
+  final_amount: number;
+  payment_mode: string;
+  payment_status?: string;
+  status: string;
+  created_at: string;
+  total_cost: number;
+  total_expenses: number;
+  profit: number;
+  expense: {
+    transportation: number;
+    labour: number;
+    other: number;
+    notes?: string;
+    total: number;
+  } | null;
+  items: {
+    id: number;
+    product_id: number;
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    subtotal: number;
+    cost_price: number;
+  }[];
+}
+
+export const getShopOrdersDetailed = async () => {
+  const response = await api.get<ShopOrderDetailed[]>("/orders/shop-orders-detailed");
+  return response.data;
+};
 
 export interface SalesTrend {
     date: string;
@@ -261,11 +366,22 @@ export const getShopOrders = async () => {
     return response.data;
 }
 
-export const updateOrderStatus = async (id: number, status: string) => {
-    // Note: Backend logic for status update might need adjustment if logic changed
-    const response = await api.put<ShopOrder>(`/orders/${id}/status`, null, {
-        params: { status }
-    });
+export const updateOrderStatus = async (id: number, updateData: ShopOrderStatusUpdate) => {
+    const response = await api.put<ShopOrder>(`/orders/${id}/status`, updateData);
+    return response.data;
+}
+
+export const createManualOrder = async (orderData: {
+    items: { product_id: number, quantity: number }[],
+    farmer_id?: number,
+    discount?: number,
+    payment_mode?: string,
+    expense_transportation?: number,
+    expense_labour?: number,
+    expense_other?: number,
+    expense_notes?: string
+}) => {
+    const response = await api.post<ShopOrder>("/orders/", orderData);
     return response.data;
 }
 
@@ -274,8 +390,8 @@ export const getShopAnalytics = async () => {
     return response.data;
 }
 
-export const getSalesTrend = async (days = 7) => {
-    const response = await api.get<SalesTrend[]>("/analytics/shop/sales-trend", { params: { days } });
+export const getSalesTrend = async (period = "7d") => {
+    const response = await api.get<SalesTrend[]>("/analytics/shop/sales-trend", { params: { period } });
     return response.data;
 }
 

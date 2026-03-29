@@ -9,7 +9,8 @@ export default function MockRazorpayPopup({
     onClose: () => void
 }) {
     const [step, setStep] = useState<"method" | "processing" | "success">("method");
-    const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+
+    const [selectedMethod, setSelectedMethod] = useState<string | null>("Navi");
 
     const handlePayment = () => {
         setStep("processing");
@@ -18,7 +19,7 @@ export default function MockRazorpayPopup({
             setTimeout(() => {
                 options.handler({
                     razorpay_order_id: options.order_id,
-                    razorpay_payment_id: "pay_mock_" + Math.random().toString(36).substring(2, 9),
+                    razorpay_payment_id: `pay_mock_${selectedMethod}_` + Math.random().toString(36).substring(2, 9),
                     razorpay_signature: "dummy_signature",
                 });
                 onClose();
@@ -83,7 +84,7 @@ export default function MockRazorpayPopup({
                                                 Pay via Navi UPI
                                             </button>
                                         </div>
-                                        <div className="p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50" onClick={() => setSelectedMethod('bhim')}>
+                                        <div className="p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50" onClick={() => { setSelectedMethod('BHIM'); handlePayment(); }}>
                                             <div className="w-8 h-8 bg-white border rounded-md shadow-sm p-1 flex items-center justify-center">
                                                 <strong className="text-green-600 text-xs">BHIM</strong>
                                             </div>
@@ -114,7 +115,7 @@ export default function MockRazorpayPopup({
                                                     {app.sub && <div className="text-[11.5px] text-[#1ba672] leading-tight mt-1 pr-6">{app.sub}</div>}
                                                 </div>
                                                 <div className="flex items-center h-8">
-                                                    <div onClick={handlePayment} className="w-5 h-5 rounded-full border-2 border-gray-300 group-hover:border-[#f16f2c] transition flex items-center justify-center"></div>
+                                                    <div onClick={() => { setSelectedMethod(app.name); handlePayment(); }} className="w-5 h-5 rounded-full border-2 border-gray-300 group-hover:border-[#f16f2c] transition flex items-center justify-center"></div>
                                                 </div>
                                             </label>
                                         ))}

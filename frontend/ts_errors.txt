@@ -1,0 +1,4 @@
+﻿src/app/dashboard/customer/products/[id]/page.tsx(164,34): error TS2339: Property 'expiry_date' does not exist on type 'Product'.
+src/app/dashboard/customer/products/[id]/page.tsx(167,94): error TS2339: Property 'expiry_date' does not exist on type 'Product'.
+src/components/payment/MockRazorpayPopup.tsx(163,159): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'SetStateAction<string>'.
+  Type 'null' is not assignable to type 'SetStateAction<string>'.

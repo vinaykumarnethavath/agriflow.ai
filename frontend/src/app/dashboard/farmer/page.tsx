@@ -453,7 +453,9 @@ export default function FarmerDashboard() {
 
     // Computed values
     const farmerDisplayName = profile?.full_name || user?.full_name || "Farmer";
-    const relationLabel = profile?.relation_type === "wife_of" ? "W/o" : "S/o";
+    const relationMap: { [key: string]: string } = { "son_of": "S/o", "wife_of": "W/o", "daughter_of": "D/o", "S/O": "S/o", "W/O": "W/o", "D/O": "D/o" };
+
+    const relationLabel = relationMap[profile?.relation_type || ""] || profile?.relation_type || "S/o";
     const relationName = profile?.father_husband_name || "";
     const activeCrops = crops.filter(c => c.status === 'Growing');
     const activeCropNames = activeCrops.map(c => c.name);
@@ -710,7 +712,8 @@ export default function FarmerDashboard() {
                         )}
                         <div>
                             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-1">
-                                {farmerDisplayName} {relationName && <span className="font-medium text-green-50">{relationLabel} {relationName}</span>}
+                                {farmerDisplayName} 
+                                {relationName && <span className="font-normal text-white/80 font-sans text-xl"> {relationLabel} {relationName}</span>}
                             </h1>
                             <div className="flex items-center gap-3">
                                 <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
@@ -1357,7 +1360,7 @@ export default function FarmerDashboard() {
                         title="Edit Profile"
                     >
                         <form onSubmit={handleSubmitProfile} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 border-b pb-4 border-gray-100">
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500">Full Name</label>
                                     <input ref={fullNameRef} defaultValue={profile.full_name || user?.full_name} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
@@ -1366,19 +1369,6 @@ export default function FarmerDashboard() {
                                     <label className="text-xs font-bold text-gray-500">Farmer ID</label>
                                     <input ref={farmerIdRef} defaultValue={profile.farmer_id} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">Gender</label>
-                                    <select
-                                        value={gender}
-                                        onChange={(e) => setGender(e.target.value)}
-                                        className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500 bg-white"
-                                    >
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                    </select>
-                                </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-500">Relation Type</label>
                                     <select
@@ -1386,40 +1376,86 @@ export default function FarmerDashboard() {
                                         onChange={(e) => setRelationType(e.target.value)}
                                         className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500 bg-white"
                                     >
-                                        <option value="son_of">Son of (S/o)</option>
-                                        <option value="wife_of">Wife of (W/o)</option>
+                                        <option value="S/O">Son of (S/o)</option>
+                                        <option value="W/O">Wife of (W/o)</option>
+                                        <option value="D/O">Daughter of (D/o)</option>
                                     </select>
                                 </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500">{relationType === "W/O" ? "Husband Name" : "Father Name"}</label>
+                                    <input ref={fatherRef} defaultValue={profile.father_husband_name} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500">{relationType === "wife_of" ? "Husband Name" : "Father Name"}</label>
-                                <input ref={fatherRef} defaultValue={profile.father_husband_name} required className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
+
+                            {/* Address Details */}
+                            <div className="space-y-3 border-b pb-4 border-gray-100">
+                                <h4 className="text-sm font-bold text-green-700 flex items-center gap-1">📍 Address Details</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">House No.</label>
+                                        <input ref={houseNoRef} defaultValue={profile.house_no} className="w-full border rounded-lg p-2 text-sm" placeholder="#123" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">Street</label>
+                                        <input ref={streetRef} defaultValue={profile.street} className="w-full border rounded-lg p-2 text-sm" placeholder="Main Street" />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">Village</label>
+                                        <input ref={villageRef} defaultValue={profile.village} required className="w-full border rounded-lg p-2 text-sm" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">Mandal</label>
+                                        <input ref={mandalRef} defaultValue={profile.mandal} className="w-full border rounded-lg p-2 text-sm" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">Pincode</label>
+                                        <input ref={pincodeRef} defaultValue={profile.pincode} className="w-full border rounded-lg p-2 text-sm" />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">District</label>
+                                        <input ref={districtRef} defaultValue={profile.district} required className="w-full border rounded-lg p-2 text-sm" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">State</label>
+                                        <input ref={stateRef} defaultValue={profile.state} required className="w-full border rounded-lg p-2 text-sm" />
+                                    </div>
+                                </div>
                             </div>
+
+                            {/* Bank Details */}
+                            <div className="space-y-3 border-b pb-4 border-gray-100">
+                                <h4 className="text-sm font-bold text-green-700 flex items-center gap-1">🏦 Bank Details</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">Bank Name</label>
+                                        <input ref={bankRef} defaultValue={profile.bank_name} className="w-full border rounded-lg p-2 text-sm" placeholder="SBI" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">IFSC Code</label>
+                                        <input ref={ifscRef} defaultValue={profile.ifsc_code} className="w-full border rounded-lg p-2 text-sm" placeholder="SBIN0000" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500">Account Number</label>
+                                    <input ref={accRef} defaultValue={profile.account_number} className="w-full border rounded-lg p-2 text-sm" placeholder="Account Number" />
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">Village</label>
-                                    <input ref={villageRef} defaultValue={profile.village} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
+                                    <label className="text-xs font-bold text-gray-500">Aadhaar</label>
+                                    <input ref={aadhaarRef} defaultValue={profile.aadhaar_last_4} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" placeholder="Aadhaar" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">District</label>
-                                    <input ref={districtRef} defaultValue={profile.district} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
+                                    <label className="text-xs font-bold text-gray-500">Profile Picture</label>
+                                    <input type="file" accept="image/*" onChange={handleFileUpload}
+                                        className="w-full border rounded-lg p-2 text-sm file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700"
+                                    />
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">State</label>
-                                    <input ref={stateRef} defaultValue={profile.state} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500">Aadhaar (Last 4)</label>
-                                    <input ref={aadhaarRef} defaultValue={profile.aadhaar_last_4} maxLength={4} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-green-500" />
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500">Profile Picture</label>
-                                <input type="file" accept="image/*" onChange={handleFileUpload}
-                                    className="w-full border rounded-lg p-2 text-sm file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700"
-                                />
                             </div>
                             <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white">
                                 Save Changes

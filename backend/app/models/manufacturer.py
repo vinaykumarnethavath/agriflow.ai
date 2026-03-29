@@ -97,7 +97,16 @@ class ManufacturerSaleCreate(SQLModel):
 class MillProfileBase(SQLModel):
     mill_name: str
     license_number: str
+    mill_id: Optional[str] = None
     father_name: str
+    relation_type: Optional[str] = "S/O"  # "S/O", "W/O", "D/O"
+    owner_name: Optional[str] = None
+    contact_number: Optional[str] = None
+    
+    # Personal ID Details
+    aadhaar_number: Optional[str] = None
+    pan_number: Optional[str] = None
+    hide_personal_details: bool = Field(default=False)
     
     # Detailed Address
     house_no: Optional[str] = None
@@ -110,6 +119,16 @@ class MillProfileBase(SQLModel):
     pincode: Optional[str] = None
     
     location_text: Optional[str] = None # Physical location description
+    
+    # Permanent Address
+    permanent_address: Optional[str] = None
+    perm_house_no: Optional[str] = None
+    perm_street: Optional[str] = None
+    perm_village: Optional[str] = None
+    perm_mandal: Optional[str] = None
+    perm_district: Optional[str] = None
+    perm_state: Optional[str] = None
+    perm_pincode: Optional[str] = None
     
     bank_name: str
     account_number: str

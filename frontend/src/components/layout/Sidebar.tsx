@@ -46,6 +46,7 @@ const Sidebar = () => {
                     { name: "Dashboard", href: "/dashboard/shop", icon: LayoutDashboard },
                     { name: "Inventory", href: "/dashboard/shop/inventory", icon: PackageSearch },
                     { name: "Orders", href: "/dashboard/shop/orders", icon: Box },
+                    { name: "Accounting", href: "/dashboard/shop/accounting", icon: TrendingUp },
                     { name: "Sales Analytics", href: "/dashboard/shop/analytics", icon: LineChart },
                     { name: "Profile", href: "/dashboard/shop/profile", icon: User },
                 ];

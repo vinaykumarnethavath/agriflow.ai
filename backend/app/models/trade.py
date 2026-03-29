@@ -13,15 +13,21 @@ class ProductBase(SQLModel):
     name: str
     short_name: Optional[str] = None
     category: str # fertilizer, crop, processed, pesticide, seeds
-    brand: Optional[str] = None # Manufacturer/Brand name
+    brand: Optional[str] = None # Brand name
+    manufacturer: Optional[str] = None # Manufacturer name (separate from brand)
     price: float # Selling Price
     cost_price: Optional[float] = None # Purchase Price (for profit calc)
     quantity: int
     unit: str = "kg" # kg, liter, packet, bag
+    quantity_per_unit: Optional[float] = None # e.g. 50 (kg per bag)
+
+    measure_unit: str = "kg" # kg, g, L, ml
     batch_number: str
     description: Optional[str] = None
     image_url: Optional[str] = None
-    expiry_date: Optional[datetime] = None
+    product_image_url: Optional[str] = None
+    main_composition: Optional[str] = None
+    manufacture_date: Optional[datetime] = None
     low_stock_threshold: int = Field(default=10)
 
 class Product(ProductBase, table=True):
@@ -45,8 +51,10 @@ class ShopOrderBase(SQLModel):
     total_amount: float
     discount: float = 0.0
     final_amount: float
-    payment_mode: str = "cash" # cash, upi, credit
-    status: str = "completed" # completed, pending, cancelled
+    payment_mode: str = "cash" # cash, upi, credit, razorpay
+    payment_status: str = "pending" # pending, paid
+    payment_id: Optional[str] = None
+    status: str = "completed" # completed, pending, confirmed, dispatched, cancelled
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class ShopOrder(ShopOrderBase, table=True):
@@ -56,6 +64,8 @@ class ShopOrder(ShopOrderBase, table=True):
     farmer_id: Optional[int] = Field(foreign_key="user.id", default=None) # Nullable for walk-in customers
     farmer_name: Optional[str] = None # For quick display or walk-ins
     
+    total_expenses: float = Field(default=0.0)  # cached sum of shop expenses
+    profit: float = Field(default=0.0)  # cached profit
     items: List["ShopOrderItem"] = Relationship(back_populates="order")
 
 class ShopOrderItemBase(SQLModel):
@@ -98,6 +108,19 @@ class ShopOrderCreate(SQLModel):
     farmer_id: Optional[int] = None
     discount: float = 0.0
     payment_mode: str = "cash"
+    # Optional expense details captured at point of sale
+    expense_transportation: float = 0.0
+    expense_labour: float = 0.0
+    expense_other: float = 0.0
+    expense_notes: Optional[str] = None
+
+class ShopOrderStatusUpdate(SQLModel):
+    status: Optional[str] = None
+    discount: Optional[float] = None  # Shop can give discount when confirming
+    expense_transportation: Optional[float] = None
+    expense_labour: Optional[float] = None
+    expense_other: Optional[float] = None
+    expense_notes: Optional[str] = None
 
 class ShopOrderRead(ShopOrderBase):
     id: int

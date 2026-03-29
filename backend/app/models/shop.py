@@ -6,7 +6,32 @@ from datetime import datetime
 class ShopProfileBase(SQLModel):
     shop_name: str
     license_number: str
+    shop_id: Optional[str] = None
     father_name: str
+    relation_type: Optional[str] = "S/O"  # "S/O", "W/O", "D/O"
+    owner_name: Optional[str] = None  # Full name of the shop owner
+    contact_number: Optional[str] = None
+    
+    # Personal ID Details
+    aadhaar_number: Optional[str] = None
+    pan_number: Optional[str] = None
+    hide_personal_details: bool = Field(default=False)
+    
+    # Shop Address
+    shop_address: Optional[str] = None  # Full shop address line
+    landmark: Optional[str] = None
+    
+    # Permanent Address
+    permanent_address: Optional[str] = None
+    
+    # Detailed Permanent Address
+    perm_house_no: Optional[str] = None
+    perm_street: Optional[str] = None
+    perm_village: Optional[str] = None
+    perm_mandal: Optional[str] = None
+    perm_district: Optional[str] = None
+    perm_state: Optional[str] = None
+    perm_pincode: Optional[str] = None
     
     # Detailed Address
     house_no: Optional[str] = None

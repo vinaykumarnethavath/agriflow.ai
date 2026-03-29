@@ -1,12 +1,11 @@
 from typing import List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func, col
 from datetime import datetime, timedelta
-import random
 
 from ..database import get_session
-from ..models import ShopOrder, ShopOrderItem, Product, User, CropExpense, Crop
+from ..models import ShopOrder, ShopOrderItem, Product, User, CropExpense, Crop, ShopAccountingExpense
 from ..deps import get_current_user
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -91,28 +90,37 @@ async def get_shop_overview(
         .where(Product.quantity < Product.low_stock_threshold)
     low_stock_count = (await session.exec(low_stock_query)).first() or 0
 
+    # 6. Pending Orders
+    pending_query = select(func.count(ShopOrder.id))\
+        .where(ShopOrder.shop_id == current_user.id)\
+        .where(ShopOrder.status == "pending")
+    pending_orders = (await session.exec(pending_query)).first() or 0
+
     return {
         "total_products": products_count,
         "total_stock": total_stock,
         "today_sales": today_sales,
         "month_revenue": month_revenue,
-        "low_stock_count": low_stock_count
+        "low_stock_count": low_stock_count,
+        "pending_orders": pending_orders
     }
 
 @router.get("/shop/sales-trend")
+@router.get("/shop/sales-trend")
 async def get_sales_trend(
-    days: int = 7,
+    period: str = Query("7d", description="7d|30d|90d|1y"),
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    """Returns daily sales for the last N days"""
+    """Returns daily sales for a given period: 7d, 30d, 90d, 1y"""
     if current_user.role != "shop":
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    period_map = {"7d": 7, "30d": 30, "90d": 90, "1y": 365}
+    days = period_map.get(period, 7)
         
     start_date = datetime.utcnow() - timedelta(days=days)
     
-    # SQLite doesn't have great date truncation, so we fetch and aggregate in python for MVP
-    # For production Postgres, use date_trunc
     query = select(ShopOrder.created_at, ShopOrder.total_amount)\
         .where(ShopOrder.shop_id == current_user.id)\
         .where(ShopOrder.created_at >= start_date)\
@@ -247,3 +255,139 @@ async def get_yield_trend(
     results = (await session.exec(query)).all()
     
     return [{"name": name, "yield": val} for name, val in results]
+
+
+@router.get("/shop/revenue")
+async def get_shop_revenue(
+    period: str = Query("all", description="today|7d|30d|90d|1y|all"),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """Returns total revenue, cost, expenses, and profit for the shop owner."""
+    if current_user.role != "shop":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    shop_id = current_user.id
+
+    # Date range filter
+    now = datetime.utcnow()
+    today = now.date()
+    date_filter = True  # Default: no filter
+    if period == "today":
+        start = datetime.combine(today, datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "7d":
+        start = datetime.combine(today - timedelta(days=7), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "30d":
+        start = datetime.combine(today - timedelta(days=30), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "90d":
+        start = datetime.combine(today - timedelta(days=90), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "1y":
+        start = datetime.combine(today - timedelta(days=365), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+
+    # 1. Total Revenue (all completed orders)
+    rev_query = select(func.coalesce(func.sum(ShopOrder.final_amount), 0.0)).where(
+        ShopOrder.shop_id == shop_id,
+        ShopOrder.status == "completed",
+        date_filter
+    )
+    total_revenue = (await session.exec(rev_query)).first() or 0.0
+
+    # 2. Total Business Expenses (from shop_accounting_expenses table)
+    exp_query = select(func.coalesce(func.sum(ShopAccountingExpense.amount), 0.0)).where(
+        ShopAccountingExpense.shop_id == shop_id,
+        date_filter
+    )
+    total_expenses = (await session.exec(exp_query)).first() or 0.0
+
+    # 3. Total cost (cost_price * quantity) for completed orders
+    cost_query = select(
+        func.coalesce(func.sum(ShopOrderItem.quantity * Product.cost_price), 0.0)
+    ).join(ShopOrder, ShopOrder.id == ShopOrderItem.order_id).join(
+        Product, Product.id == ShopOrderItem.product_id
+    ).where(
+        ShopOrder.shop_id == shop_id,
+        ShopOrder.status == "completed",
+        Product.cost_price != None,
+        date_filter
+    )
+    total_cost = (await session.exec(cost_query)).first() or 0.0
+
+    profit = total_revenue - total_cost - total_expenses
+
+    # 4. Stats for quick cards
+    total_orders_q = select(func.count(ShopOrder.id)).where(ShopOrder.shop_id == shop_id)
+    total_orders = (await session.exec(total_orders_q)).first() or 0
+
+    completed_orders_q = select(func.count(ShopOrder.id)).where(
+        ShopOrder.shop_id == shop_id, ShopOrder.status == "completed"
+    )
+    completed_orders = (await session.exec(completed_orders_q)).first() or 0
+
+    avg_ticket = (total_revenue / completed_orders) if completed_orders > 0 else 0.0
+
+    pending_q = select(func.count(ShopOrder.id)).where(
+        ShopOrder.shop_id == shop_id, ShopOrder.status == "pending"
+    )
+    pending_orders = (await session.exec(pending_q)).first() or 0
+
+    return {
+        "total_revenue": float(f"{total_revenue:.2f}"),
+        "total_cost": float(f"{total_cost:.2f}"),
+        "total_expenses": float(f"{total_expenses:.2f}"),
+        "profit": float(f"{profit:.2f}"),
+        "total_orders": int(total_orders),
+        "completed_orders": int(completed_orders),
+        "pending_orders": int(pending_orders),
+        "avg_ticket": float(f"{avg_ticket:.2f}"),
+    }
+
+
+@router.get("/shop/category-revenue")
+async def get_category_revenue(
+    period: str = Query("all", description="today|7d|30d|90d|1y|all"),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """Returns revenue breakdown by product category for the shop."""
+    if current_user.role != "shop":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Date range filter
+    now = datetime.utcnow()
+    today = now.date()
+    date_filter = True
+    if period == "today":
+        start = datetime.combine(today, datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "7d":
+        start = datetime.combine(today - timedelta(days=7), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "30d":
+        start = datetime.combine(today - timedelta(days=30), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "90d":
+        start = datetime.combine(today - timedelta(days=90), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "1y":
+        start = datetime.combine(today - timedelta(days=365), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+
+    query = select(
+        Product.category,
+        func.coalesce(func.sum(ShopOrderItem.subtotal), 0.0).label("revenue"),
+        func.coalesce(func.sum(ShopOrderItem.quantity), 0).label("qty_sold")
+    ).join(ShopOrderItem, ShopOrderItem.product_id == Product.id).join(
+        ShopOrder, ShopOrder.id == ShopOrderItem.order_id
+    ).where(
+        ShopOrder.shop_id == current_user.id,
+        date_filter
+    ).group_by(Product.category).order_by(col("revenue").desc())
+
+    results = (await session.exec(query)).all()
+    return [{"category": r[0], "revenue": float(r[1]), "qty_sold": int(r[2])} for r in results]
+
