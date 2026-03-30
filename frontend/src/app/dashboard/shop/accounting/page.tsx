@@ -559,12 +559,12 @@ export default function ShopAccountingPage() {
 
                                         // For batch_activation: find the single linked active product
                                         const activationProduct = exp.category === "batch_activation"
-                                            ? activeBatches.find(b => linkedIds.includes(Number(b.id)))
+                                            ? allProducts.find(b => linkedIds.includes(Number(b.id)))
                                             : null;
 
                                         // For batch_purchase: find the linked active product
                                         const purchaseProduct = exp.category === "batch_purchase"
-                                            ? activeBatches.find(b => linkedIds.includes(Number(b.id)))
+                                            ? allProducts.find(b => linkedIds.includes(Number(b.id)))
                                             : null;
 
                                         // For batch overhead (transport/labour/other): find ALL linked products
@@ -591,7 +591,7 @@ export default function ShopAccountingPage() {
 
                                                 {/* BATCH DETAILS column */}
                                                 <td className="px-6 py-3">
-                                                    {/* batch_activation: show Batch Name, Qty, Cost/unit */}
+                                                    {/* batch_activation: show all details including Product Cost */}
                                                     {activationProduct && (
                                                         <div className="flex flex-col gap-0.5 py-1">
                                                             <div className="flex items-center gap-2">
@@ -600,33 +600,53 @@ export default function ShopAccountingPage() {
                                                                     {activationProduct.batch_number}
                                                                 </span>
                                                             </div>
-                                                            <div className="flex gap-2 text-[10px] text-slate-500 font-medium">
+                                                            <div className="flex gap-2 text-[10px] text-slate-500 font-medium mt-0.5">
                                                                 <span>Qty: <span className="text-slate-700 font-bold">{activationProduct.quantity} {activationProduct.unit}</span></span>
                                                                 <span className="text-slate-300">|</span>
                                                                 <span>Cost/unit: <span className="text-slate-700 font-bold">₹{activationProduct.cost_price}</span></span>
+                                                                <span className="text-slate-300">|</span>
+                                                                <span>Product Cost: <span className="text-slate-700 font-bold">₹{((activationProduct.cost_price || 0) * (activationProduct.quantity || 0)).toFixed(2)}</span></span>
                                                             </div>
                                                         </div>
                                                     )}
                                                     
-                                                    {/* batch_purchase: show product name + batch */}
+                                                    {/* batch_purchase: show all details including Product Cost */}
                                                     {purchaseProduct && !activationProduct && (
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="text-xs font-semibold text-slate-700">{purchaseProduct.name}</span>
-                                                            <span className="text-[9px] font-mono font-semibold text-slate-500 bg-slate-50 px-1 rounded border border-slate-200 w-fit">
-                                                                {purchaseProduct.batch_number}
-                                                            </span>
+                                                        <div className="flex flex-col gap-0.5 py-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-slate-800">{purchaseProduct.name}</span>
+                                                                <span className="text-[9px] font-mono font-bold text-slate-600 bg-slate-50 px-1 rounded border border-slate-200">
+                                                                    {purchaseProduct.batch_number}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex gap-2 text-[10px] text-slate-500 font-medium mt-0.5">
+                                                                <span>Qty: <span className="text-slate-700 font-bold">{purchaseProduct.quantity} {purchaseProduct.unit}</span></span>
+                                                                <span className="text-slate-300">|</span>
+                                                                <span>Cost/unit: <span className="text-slate-700 font-bold">₹{purchaseProduct.cost_price}</span></span>
+                                                                <span className="text-slate-300">|</span>
+                                                                <span>Product Cost: <span className="text-slate-700 font-bold">₹{((purchaseProduct.cost_price || 0) * (purchaseProduct.quantity || 0)).toFixed(2)}</span></span>
+                                                            </div>
                                                         </div>
                                                     )}
 
-                                                    {/* batch_transport/labour/other: show ALL linked batches */}
+                                                    {/* batch_transport/labour/other: show ALL linked batches + Product Cost */}
                                                     {linkedBatchProducts.length > 0 && !activationProduct && (
-                                                        <div className="flex flex-col gap-1.5 py-1">
+                                                        <div className="flex flex-col gap-2 py-1">
                                                             {linkedBatchProducts.map(bp => (
-                                                                <div key={bp.id} className="flex items-center gap-2">
-                                                                    <span className="text-xs font-medium text-slate-700">{bp.name}</span>
-                                                                    <span className="text-[9px] font-mono text-slate-500 bg-slate-50 px-1 rounded border border-slate-200">
-                                                                        {bp.batch_number}
-                                                                    </span>
+                                                                <div key={bp.id} className="flex flex-col gap-0.5">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-xs font-semibold text-slate-800">{bp.name}</span>
+                                                                        <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-100">
+                                                                            {bp.batch_number}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex gap-2 text-[10px] text-slate-500 font-medium mt-0.5">
+                                                                        <span>Qty: <span className="text-slate-700 font-bold">{bp.quantity} {bp.unit}</span></span>
+                                                                        <span className="text-slate-300">|</span>
+                                                                        <span>Cost/unit: <span className="text-slate-700 font-bold">₹{bp.cost_price}</span></span>
+                                                                        <span className="text-slate-300">|</span>
+                                                                        <span>Cost: <span className="text-slate-700 font-bold">₹{((bp.cost_price || 0) * (bp.quantity || 0)).toFixed(2)}</span></span>
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -634,7 +654,13 @@ export default function ShopAccountingPage() {
 
                                                     {/* General expenses or unmatched ids */}
                                                     {!activationProduct && !purchaseProduct && linkedBatchProducts.length === 0 && (
-                                                        <span className="text-slate-300 text-xs">—</span>
+                                                        <span className="text-slate-500 text-[11px]">
+                                                            {(isAutoEntry || ["batch_transport","batch_labour","batch_other"].includes(exp.category)) && exp.description ? (
+                                                                <span className="italic whitespace-normal max-w-[250px] block border-l-2 border-slate-200 pl-2">{exp.description}</span>
+                                                            ) : (
+                                                                <span className="text-slate-300 px-2">—</span>
+                                                            )}
+                                                        </span>
                                                     )}
                                                 </td>
 

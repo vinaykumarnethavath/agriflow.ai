@@ -8,3 +8,6 @@ python-multipart
 pydantic-settings
 aiosqlite
 asyncpg
+httpx
+bcrypt
+python-dotenv

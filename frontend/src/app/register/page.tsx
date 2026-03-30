@@ -5,16 +5,27 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { Sprout } from "lucide-react";
+import { Sprout, Mail, Phone } from "lucide-react";
 import { UserRole } from "@/types";
 
+type AuthMethod = "email" | "phone";
+
 export default function RegisterPage() {
-    // Refs for safe typing
+    const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
+
+    // Email form refs
     const fullNameRef = useRef<HTMLInputElement>(null);
     const emailRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
     const confirmPasswordRef = useRef<HTMLInputElement>(null);
     const roleRef = useRef<HTMLSelectElement>(null);
+
+    // Phone form state
+    const [phone, setPhone] = useState("");
+    const [phoneFullName, setPhoneFullName] = useState("");
+    const [phonePassword, setPhonePassword] = useState("");
+    const [phoneConfirmPassword, setPhoneConfirmPassword] = useState("");
+    const [phoneRole, setPhoneRole] = useState<UserRole>(UserRole.FARMER);
 
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -29,7 +40,12 @@ export default function RegisterPage() {
         setPasswordsMatch(!confirm || pass === confirm);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handlePhonePasswordChange = (pass: string, confirm: string) => {
+        setPasswordsMatch(!confirm || pass === confirm);
+    };
+
+    // ── Email Registration ────────────────────────────────────────────────────
+    const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
@@ -45,40 +61,67 @@ export default function RegisterPage() {
         }
 
         setLoading(true);
-
         try {
-            const formData = {
-                email,
-                password,
-                confirm_password,
-                full_name,
-                role
-            };
-
-            console.log("Registering user:", formData);
-            await api.post("/auth/register", formData);
-
+            await api.post("/auth/register", { email, password, full_name, role });
             const { data } = await api.post("/auth/login", { email, password });
-
-            const user = {
-                id: data.id,
-                email,
-                role: data.role,
-                full_name
-            };
+            const user = { id: data.id, email, role: data.role, full_name };
             localStorage.setItem("user", JSON.stringify(user));
             login(data.access_token, data.role);
             router.push(`/dashboard/${data.role}`);
         } catch (err: any) {
-            console.error("Registration error:", err);
             setError(err.response?.data?.detail || "Registration failed");
             setLoading(false);
         }
     };
 
+    // ── Phone Registration ────────────────────────────────────────────────────
+    const handlePhoneSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+
+        if (!phone || phone.length !== 10) {
+            setError("Enter a valid 10-digit phone number");
+            return;
+        }
+        if (phonePassword !== phoneConfirmPassword) {
+            setError("Passwords do not match");
+            return;
+        }
+        if (!phoneFullName.trim()) {
+            setError("Full name is required");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await api.post("/auth/register", {
+                phone_number: phone,
+                password: phonePassword,
+                full_name: phoneFullName,
+                role: phoneRole,
+            });
+            const { data } = await api.post("/auth/login", {
+                phone_number: phone,
+                password: phonePassword,
+                role: phoneRole,
+            });
+            const user = { id: data.id, phone_number: phone, role: data.role, full_name: phoneFullName };
+            localStorage.setItem("user", JSON.stringify(user));
+            login(data.access_token, data.role);
+            router.push(`/dashboard/${data.role}`);
+        } catch (err: any) {
+            setError(err.response?.data?.detail || "Registration failed");
+            setLoading(false);
+        }
+    };
+
+    const inputCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground";
+    const selectCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground";
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-colors duration-300">
             <div className="w-full max-w-md bg-card rounded-xl border border-border shadow-lg overflow-hidden">
+                {/* Header */}
                 <div className="p-6 text-center space-y-2 border-b border-border">
                     <div className="flex justify-center mt-2">
                         <div className="h-12 w-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
@@ -89,109 +132,123 @@ export default function RegisterPage() {
                     <p className="text-sm text-muted-foreground">Create an account to get started</p>
                 </div>
 
-                <div className="p-8 pb-10">
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="space-y-1.5">
-                            <label htmlFor="full_name" className="text-sm font-semibold text-muted-foreground block">Full Name</label>
-                            <input
-                                id="full_name"
-                                name="full_name"
-                                type="text"
-                                placeholder="John Doe"
-                                ref={fullNameRef}
-                                required
-                                autoComplete="name"
-                                className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label htmlFor="email" className="text-sm font-semibold text-muted-foreground block">Email Address</label>
-                            <input
-                                id="email"
-                                name="email"
-                                type="email"
-                                placeholder="user@example.com"
-                                ref={emailRef}
-                                required
-                                autoComplete="email"
-                                className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label htmlFor="password" title="password" className="text-sm font-semibold text-muted-foreground block">Password</label>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    ref={passwordRef}
-                                    onChange={handlePasswordChange}
-                                    required
-                                    autoComplete="new-password"
-                                    placeholder="••••••••"
-                                    className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label htmlFor="confirm_password" title="confirm password" className="text-sm font-semibold text-muted-foreground block">Confirm</label>
-                                <input
-                                    id="confirm_password"
-                                    name="confirm_password"
-                                    type="password"
-                                    ref={confirmPasswordRef}
-                                    onChange={handlePasswordChange}
-                                    required
-                                    autoComplete="new-password"
-                                    placeholder="••••••••"
-                                    className={`w-full rounded-lg border px-4 py-2 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label htmlFor="role" className="text-sm font-semibold text-muted-foreground block">Your Role</label>
-                            <select
-                                id="role"
-                                name="role"
-                                ref={roleRef}
-                                className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground"
-                                required
-                            >
-                                <option value={UserRole.FARMER}>Farmer</option>
-                                <option value={UserRole.SHOP}>Shop Owner</option>
-                                <option value={UserRole.MANUFACTURER}>Mill Owner</option>
-                                <option value={UserRole.CUSTOMER}>Customer</option>
-                            </select>
-                        </div>
-
-                        {error && (
-                            <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">
-                                {error}
-                            </div>
-                        )}
-
+                <div className="p-8 pb-10 space-y-5">
+                    {/* Method Toggle */}
+                    <div className="flex rounded-lg border border-border overflow-hidden">
                         <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-2"
+                            type="button"
+                            onClick={() => { setAuthMethod("email"); setError(""); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "email" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}
                         >
-                            {loading ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    Creating...
-                                </span>
-                            ) : "Create Account"}
+                            <Mail className="h-4 w-4" /> Email
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => { setAuthMethod("phone"); setError(""); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "phone" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                        >
+                            <Phone className="h-4 w-4" /> Phone Number
+                        </button>
+                    </div>
 
-                        <div className="text-center text-sm pt-2">
-                            <span className="text-muted-foreground">Already have an account? </span>
-                            <Link href="/login" className="text-green-600 font-bold hover:underline">
-                                Login Here
-                            </Link>
-                        </div>
-                    </form>
+                    {/* ── EMAIL FORM ── */}
+                    {authMethod === "email" && (
+                        <form onSubmit={handleEmailSubmit} className="space-y-5">
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-muted-foreground block">Full Name</label>
+                                <input type="text" placeholder="John Doe" ref={fullNameRef} required autoComplete="name" className={inputCls} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-muted-foreground block">Email Address</label>
+                                <input type="email" placeholder="user@example.com" ref={emailRef} required autoComplete="email" className={inputCls} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-semibold text-muted-foreground block">Password</label>
+                                    <input type="password" ref={passwordRef} onChange={handlePasswordChange} required autoComplete="new-password" placeholder="••••••••" className={inputCls} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-semibold text-muted-foreground block">Confirm</label>
+                                    <input type="password" ref={confirmPasswordRef} onChange={handlePasswordChange} required autoComplete="new-password" placeholder="••••••••"
+                                        className={`w-full rounded-lg border px-4 py-2 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 bg-red-50 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`} />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-muted-foreground block">Your Role</label>
+                                <select ref={roleRef} required className={selectCls}>
+                                    <option value={UserRole.FARMER}>Farmer</option>
+                                    <option value={UserRole.SHOP}>Shop Owner</option>
+                                    <option value={UserRole.MANUFACTURER}>Mill Owner</option>
+                                    <option value={UserRole.CUSTOMER}>Customer</option>
+                                </select>
+                            </div>
+                            {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
+                            <button type="submit" disabled={loading} className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
+                                {loading ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</span> : "Create Account"}
+                            </button>
+                            <div className="text-center text-sm pt-2">
+                                <span className="text-muted-foreground">Already have an account? </span>
+                                <Link href="/login" className="text-green-600 font-bold hover:underline">Login Here</Link>
+                            </div>
+                        </form>
+                    )}
+
+                    {/* ── PHONE FORM ── */}
+                    {authMethod === "phone" && (
+                        <form onSubmit={handlePhoneSubmit} className="space-y-5">
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-muted-foreground block">Phone Number</label>
+                                <div className="flex gap-2">
+                                    <span className="flex items-center px-3 rounded-lg border border-input bg-muted text-sm text-muted-foreground font-semibold">+91</span>
+                                    <input
+                                        type="tel"
+                                        placeholder="9876543210"
+                                        value={phone}
+                                        onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                                        maxLength={10}
+                                        required
+                                        className={`${inputCls} flex-1`}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-muted-foreground block">Full Name</label>
+                                <input type="text" placeholder="John Doe" value={phoneFullName} onChange={e => setPhoneFullName(e.target.value)} required autoComplete="name" className={inputCls} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-semibold text-muted-foreground block">Password</label>
+                                    <input type="password" placeholder="••••••••" value={phonePassword}
+                                        onChange={e => { setPhonePassword(e.target.value); handlePhonePasswordChange(e.target.value, phoneConfirmPassword); }}
+                                        required autoComplete="new-password" className={inputCls} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-semibold text-muted-foreground block">Confirm</label>
+                                    <input type="password" placeholder="••••••••" value={phoneConfirmPassword}
+                                        onChange={e => { setPhoneConfirmPassword(e.target.value); handlePhonePasswordChange(phonePassword, e.target.value); }}
+                                        required autoComplete="new-password"
+                                        className={`w-full rounded-lg border px-4 py-2 text-sm outline-none transition-all focus:ring-2 placeholder:text-muted-foreground text-foreground ${!passwordsMatch ? "border-red-500 bg-red-50 focus:ring-red-500/10" : "border-input bg-background focus:border-green-500 focus:ring-green-500/10"}`} />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-muted-foreground block">Your Role</label>
+                                <select value={phoneRole} onChange={e => setPhoneRole(e.target.value as UserRole)} required className={selectCls}>
+                                    <option value={UserRole.FARMER}>Farmer</option>
+                                    <option value={UserRole.SHOP}>Shop Owner</option>
+                                    <option value={UserRole.MANUFACTURER}>Mill Owner</option>
+                                    <option value={UserRole.CUSTOMER}>Customer</option>
+                                </select>
+                            </div>
+                            {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
+                            <button type="submit" disabled={loading} className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
+                                {loading ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</span> : "Create Account"}
+                            </button>
+                            <div className="text-center text-sm pt-2">
+                                <span className="text-muted-foreground">Already have an account? </span>
+                                <Link href="/login" className="text-green-600 font-bold hover:underline">Login Here</Link>
+                            </div>
+                        </form>
+                    )}
                 </div>
             </div>
         </div>

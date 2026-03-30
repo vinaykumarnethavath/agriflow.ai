@@ -1,7 +1,7 @@
 from typing import Optional
 from enum import Enum
 from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship
-from pydantic import EmailStr
+from pydantic import EmailStr, field_validator
 
 class UserRole(str, Enum):
     FARMER = "farmer"
@@ -10,7 +10,8 @@ class UserRole(str, Enum):
     CUSTOMER = "customer"
 
 class UserBase(SQLModel):
-    email: EmailStr = Field(index=True)
+    email: Optional[EmailStr] = Field(default=None, index=True)
+    phone_number: Optional[str] = Field(default=None, index=True)
     full_name: str
     role: UserRole
     is_active: bool = True
@@ -29,14 +30,23 @@ class User(UserBase, table=True):
 
 class UserCreate(UserBase):
     password: str
+    phone_otp_verified: Optional[bool] = False
 
 class UserRead(UserBase):
     id: int
 
 class UserLogin(SQLModel):
-    email: EmailStr
-    password: str
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    password: Optional[str] = None
     role: Optional[UserRole] = None
+
+class SendPhoneOTPRequest(SQLModel):
+    phone_number: str
+
+class VerifyPhoneOTPRequest(SQLModel):
+    phone_number: str
+    otp_code: str
 
 class ForgotPasswordRequest(SQLModel):
     email: EmailStr

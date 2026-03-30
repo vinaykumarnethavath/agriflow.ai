@@ -276,17 +276,19 @@ export default function InventoryPage() {
     };
 
     const calculateProfit = () => {
-        if (!watchPrice || !watchCostPrice) return null;
         const baseCost = Number(watchCostPrice) || 0;
-        // Total overhead for this batch
         const totalOverhead = editingProduct 
             ? ((editingProduct.apportioned_transport || 0) + (editingProduct.apportioned_labour || 0) + (editingProduct.apportioned_other || 0))
             : 0;
-        // Quantity of this batch (locked or watched)
         const qty = Number(watch("quantity")) || editingProduct?.quantity || 1;
         const overheadPerUnit = totalOverhead / Math.max(qty, 1);
         
         const landedCost = baseCost + overheadPerUnit;
+        
+        if (!watchPrice || !watchCostPrice) {
+            return { totalOverhead, overheadPerUnit, landedCost, baseCost, profit: null, margin: null };
+        }
+        
         const profit = Number(watchPrice) - landedCost;
         const margin = Number(watchPrice) > 0 ? (profit / Number(watchPrice)) * 100 : 0;
         
@@ -630,15 +632,9 @@ export default function InventoryPage() {
                                                                 </td>
                                                                 {/* Price / Cost */}
                                                                 <td className="px-6 py-3">
-                                                                    <div className="font-medium">₹{product.price.toFixed(2)}</div>
+                                                                    <div className="font-medium" title="Selling Price">₹{product.price.toFixed(2)}</div>
                                                                     {product.cost_price && (
-                                                                        <div className="text-xs text-gray-500">Base: ₹{product.cost_price.toFixed(2)}</div>
-                                                                    )}
-                                                                    {totalOverhead > 0 && (
-                                                                        <div className="text-[10px] font-semibold text-orange-600">+ ₹{totalOverhead.toFixed(2)} Ovhd</div>
-                                                                    )}
-                                                                    {totalOverhead > 0 && (
-                                                                        <div className="text-[10px] text-gray-400">Landed: ₹{landedCost.toFixed(2)}</div>
+                                                                        <div className="text-xs text-gray-500" title="Cost Price">Base: ₹{product.cost_price.toFixed(2)}</div>
                                                                     )}
                                                                 </td>
                                                                 {/* Composition */}
@@ -646,10 +642,8 @@ export default function InventoryPage() {
                                                                     <div className="flex flex-col items-end text-right">
                                                                         {totalOverhead > 0 ? (
                                                                             <>
-                                                                                <div className="text-[10px] text-gray-500 mb-0.5">Batch Overhead</div>
-                                                                                <div className="font-semibold text-orange-600 text-xs mb-1">₹{totalOverhead.toFixed(2)}</div>
                                                                                 {product.quantity > 0 && (
-                                                                                    <div className="text-[10px] text-orange-400">₹{(totalOverhead / product.quantity).toFixed(2)}/{product.unit || 'unit'}</div>
+                                                                                    <div className="text-[10px] text-orange-400 mb-1">Ovhd: ₹{(totalOverhead / product.quantity).toFixed(2)}/{product.unit || 'unit'}</div>
                                                                                 )}
                                                                             </>
                                                                         ) : (
@@ -975,16 +969,16 @@ export default function InventoryPage() {
                         <Input type="number" step="0.01" {...register("price", { min: 0 })} placeholder="0.00" />
                     </div>
 
-                    {profitStats && Number(watchPrice) > 0 && (
+                    {profitStats?.profit !== null && Number(watchPrice) > 0 && (
                         <div className="p-3 bg-blue-50/50 rounded-lg text-sm border border-blue-100 space-y-2">
                             <div className="flex justify-between">
                                 <span className="text-blue-800 font-medium text-xs">Landed Cost (Base + Overhead):</span>
-                                <span className="text-slate-700 font-bold text-xs">₹{profitStats.landedCost.toFixed(2)}</span>
+                                <span className="text-slate-700 font-bold text-xs">₹{profitStats?.landedCost.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between pt-1 border-t border-blue-100/50">
                                 <span className="text-blue-800 font-bold">Est. Profit per Unit:</span>
-                                <span className={profitStats.profit >= 0 ? "text-green-600 font-black" : "text-red-600 font-black"}>
-                                    ₹{profitStats.profit.toFixed(2)} ({profitStats.margin.toFixed(1)}% margin)
+                                <span className={(profitStats?.profit ?? 0) >= 0 ? "text-green-600 font-black" : "text-red-600 font-black"}>
+                                    ₹{(profitStats?.profit ?? 0).toFixed(2)} ({(profitStats?.margin ?? 0).toFixed(1)}% margin)
                                 </span>
                             </div>
                         </div>
