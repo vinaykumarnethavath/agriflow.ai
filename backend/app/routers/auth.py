@@ -21,89 +21,178 @@ def generate_otp(length=6):
 
 @router.post("/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest, session: AsyncSession = Depends(get_session)):
-    statement = select(User).where(User.email == request.email)
-    result = await session.exec(statement)
-    user = result.first()
-    
-    if not user:
-        # We don't want to leak if a user exists, but for demo let's be descriptive
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Delete old OTPs for this email to avoid confusion
-    old_otps_statement = select(UserOTP).where(UserOTP.email == request.email)
-    old_otps_result = await session.exec(old_otps_statement)
-    for old_otp in old_otps_result.all():
-        await session.delete(old_otp)
-    
-    otp_code = generate_otp()
-    expires_at = datetime.utcnow() + timedelta(minutes=10)
-    
-    otp_entry = UserOTP(email=request.email, otp_code=otp_code, expires_at=expires_at)
-    session.add(otp_entry)
-    await session.commit()
-    
-    print(f"\n[DEMO] OTP for {request.email}: {otp_code}\n")
-    
-    # Send real email
-    email_sent = send_otp_email(request.email, otp_code)
-    
-    if not email_sent:
-        raise HTTPException(status_code=500, detail="Failed to send OTP email. Please check backend logs.")
-        
-    return {"message": "OTP sent to your email address"}
+    role_val = request.role.value if hasattr(request.role, "value") else str(request.role)
+
+    if request.email:
+        email = request.email.lower().strip()
+        statement = select(User).where(User.email == email, User.role == role_val)
+        result = await session.exec(statement)
+        user = result.first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="No account found for this email and role")
+
+        old_otps_statement = select(UserOTP).where(UserOTP.email == email)
+        old_otps_result = await session.exec(old_otps_statement)
+        for old_otp in old_otps_result.all():
+            await session.delete(old_otp)
+
+        otp_code = generate_otp()
+        expires_at = datetime.utcnow() + timedelta(minutes=10)
+        otp_entry = UserOTP(email=email, otp_code=otp_code, expires_at=expires_at)
+        session.add(otp_entry)
+        await session.commit()
+
+        print(f"\n[DEMO] Password reset OTP for {email} ({role_val}): {otp_code}\n")
+
+        email_sent = send_otp_email(email, otp_code)
+        if not email_sent:
+            raise HTTPException(status_code=500, detail="Failed to send OTP email. Please check backend logs.")
+
+        return {"message": "OTP sent to your email address"}
+
+    if request.phone_number:
+        phone_number = request.phone_number.strip()
+        statement = select(User).where(User.phone_number == phone_number, User.role == role_val)
+        result = await session.exec(statement)
+        user = result.first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="No account found for this phone number and role")
+
+        old_stmt = select(PhoneOTP).where(PhoneOTP.phone_number == phone_number)
+        old_result = await session.exec(old_stmt)
+        for old in old_result.all():
+            await session.delete(old)
+
+        otp_code = generate_otp()
+        expires_at = datetime.utcnow() + timedelta(minutes=10)
+        otp_entry = PhoneOTP(phone_number=phone_number, otp_code=otp_code, expires_at=expires_at)
+        session.add(otp_entry)
+        await session.commit()
+
+        print(f"\n[DEMO] Password reset phone OTP for {phone_number} ({role_val}): {otp_code}\n")
+
+        sms_sent = await send_otp_sms(phone_number, otp_code)
+        if not sms_sent:
+            raise HTTPException(status_code=500, detail="Failed to send OTP SMS. Please check backend logs.")
+
+        return {"message": "OTP sent to your phone number"}
+
+    raise HTTPException(status_code=400, detail="Either email or phone number is required")
 
 @router.post("/verify-otp")
 async def verify_otp(request: VerifyOTPRequest, session: AsyncSession = Depends(get_session)):
+    role_val = request.role.value if hasattr(request.role, "value") else str(request.role)
     now = datetime.utcnow()
-    statement = select(UserOTP).where(
-        UserOTP.email == request.email,
-        UserOTP.otp_code == request.otp_code,
-        UserOTP.expires_at > now,
-        UserOTP.is_verified == False
-    )
-    result = await session.exec(statement)
-    otp_entry = result.first()
-    
-    if not otp_entry:
-        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
-    
-    otp_entry.is_verified = True
-    session.add(otp_entry)
-    await session.commit()
-    
-    return {"message": "OTP verified successfully"}
+
+    if request.email:
+        email = request.email.lower().strip()
+        user_stmt = select(User).where(User.email == email, User.role == role_val)
+        user_result = await session.exec(user_stmt)
+        if not user_result.first():
+            raise HTTPException(status_code=404, detail="No account found for this email and role")
+
+        statement = select(UserOTP).where(
+            UserOTP.email == email,
+            UserOTP.otp_code == request.otp_code,
+            UserOTP.expires_at > now,
+            UserOTP.is_verified == False
+        )
+        result = await session.exec(statement)
+        otp_entry = result.first()
+
+        if not otp_entry:
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+        otp_entry.is_verified = True
+        session.add(otp_entry)
+        await session.commit()
+        return {"message": "OTP verified successfully"}
+
+    if request.phone_number:
+        phone_number = request.phone_number.strip()
+        user_stmt = select(User).where(User.phone_number == phone_number, User.role == role_val)
+        user_result = await session.exec(user_stmt)
+        if not user_result.first():
+            raise HTTPException(status_code=404, detail="No account found for this phone number and role")
+
+        statement = select(PhoneOTP).where(
+            PhoneOTP.phone_number == phone_number,
+            PhoneOTP.otp_code == request.otp_code,
+            PhoneOTP.expires_at > now,
+            PhoneOTP.is_verified == False
+        )
+        result = await session.exec(statement)
+        otp_entry = result.first()
+
+        if not otp_entry:
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+        otp_entry.is_verified = True
+        session.add(otp_entry)
+        await session.commit()
+        return {"message": "OTP verified successfully"}
+
+    raise HTTPException(status_code=400, detail="Either email or phone number is required")
 
 @router.post("/reset-password")
 async def reset_password(request: ResetPasswordRequest, session: AsyncSession = Depends(get_session)):
-    # Verify OTP was actually verified in previous step
-    statement = select(UserOTP).where(
-        UserOTP.email == request.email,
-        UserOTP.otp_code == request.otp_code,
-        UserOTP.is_verified == True
-    )
-    result = await session.exec(statement)
-    otp_entry = result.first()
-    
-    if not otp_entry:
-        raise HTTPException(status_code=400, detail="OTP not verified or invalid")
-    
-    # Update user password
-    user_statement = select(User).where(User.email == request.email)
-    user_result = await session.exec(user_statement)
-    user = user_result.first()
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    user.hashed_password = get_password_hash(request.new_password)
-    session.add(user)
-    
-    # Delete the used OTP
-    await session.delete(otp_entry)
-    
-    await session.commit()
-    
-    return {"message": "Password reset successful"}
+    role_val = request.role.value if hasattr(request.role, "value") else str(request.role)
+
+    if request.email:
+        email = request.email.lower().strip()
+        statement = select(UserOTP).where(
+            UserOTP.email == email,
+            UserOTP.otp_code == request.otp_code,
+            UserOTP.is_verified == True
+        )
+        result = await session.exec(statement)
+        otp_entry = result.first()
+
+        if not otp_entry:
+            raise HTTPException(status_code=400, detail="OTP not verified or invalid")
+
+        user_statement = select(User).where(User.email == email, User.role == role_val)
+        user_result = await session.exec(user_statement)
+        user = user_result.first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="No account found for this email and role")
+
+        user.hashed_password = get_password_hash(request.new_password)
+        session.add(user)
+        await session.delete(otp_entry)
+        await session.commit()
+        return {"message": "Password reset successful"}
+
+    if request.phone_number:
+        phone_number = request.phone_number.strip()
+        statement = select(PhoneOTP).where(
+            PhoneOTP.phone_number == phone_number,
+            PhoneOTP.otp_code == request.otp_code,
+            PhoneOTP.is_verified == True
+        )
+        result = await session.exec(statement)
+        otp_entry = result.first()
+
+        if not otp_entry:
+            raise HTTPException(status_code=400, detail="OTP not verified or invalid")
+
+        user_statement = select(User).where(User.phone_number == phone_number, User.role == role_val)
+        user_result = await session.exec(user_statement)
+        user = user_result.first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="No account found for this phone number and role")
+
+        user.hashed_password = get_password_hash(request.new_password)
+        session.add(user)
+        await session.delete(otp_entry)
+        await session.commit()
+        return {"message": "Password reset successful"}
+
+    raise HTTPException(status_code=400, detail="Either email or phone number is required")
 
 @router.post("/send-phone-otp")
 async def send_phone_otp(request: SendPhoneOTPRequest, session: AsyncSession = Depends(get_session)):
@@ -248,9 +337,14 @@ async def register(user: UserCreate, session: AsyncSession = Depends(get_session
     session.add(db_user)
     try:
         await session.commit()
-    except sqlalchemy.exc.IntegrityError:
+    except sqlalchemy.exc.IntegrityError as exc:
         await session.rollback()
-        raise HTTPException(status_code=400, detail=f"Account with this {'email' if user.email else 'phone number'} and role already exists")
+        message = str(exc.orig) if getattr(exc, "orig", None) else str(exc)
+        if "phone_number" in message and ("duplicate" in message.lower() or "unique" in message.lower()):
+            raise HTTPException(status_code=400, detail="Account with this phone number and role already exists")
+        if "email" in message and ("duplicate" in message.lower() or "unique" in message.lower()):
+            raise HTTPException(status_code=400, detail="Account with this email and role already exists")
+        raise HTTPException(status_code=400, detail=message)
     await session.refresh(db_user)
     return db_user
 

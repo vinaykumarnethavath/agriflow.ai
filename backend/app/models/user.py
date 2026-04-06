@@ -16,7 +16,7 @@ class UserBase(SQLModel):
     role: UserRole
     is_active: bool = True
 
-    __table_args__ = (UniqueConstraint("email", "role"),)
+    __table_args__ = (UniqueConstraint("email", "role"), UniqueConstraint("phone_number", "role"),)
 
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -50,13 +50,19 @@ class VerifyPhoneOTPRequest(SQLModel):
     otp_code: str
 
 class ForgotPasswordRequest(SQLModel):
-    email: EmailStr
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    role: UserRole
 
 class VerifyOTPRequest(SQLModel):
-    email: EmailStr
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    role: UserRole
     otp_code: str
 
 class ResetPasswordRequest(SQLModel):
-    email: EmailStr
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    role: UserRole
     otp_code: str
     new_password: str

@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { KeyRound } from "lucide-react";
 
+type ResetMethod = "email" | "phone";
+
 function ResetPasswordContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -12,17 +14,26 @@ function ResetPasswordContent() {
     const newPasswordRef = useRef<HTMLInputElement>(null);
     const confirmPasswordRef = useRef<HTMLInputElement>(null);
 
-    const [credentials, setCredentials] = useState({ email: "", otp: "" });
+    const [credentials, setCredentials] = useState({ method: "email" as ResetMethod, email: "", phone_number: "", role: "", otp: "" });
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
     const [passwordsMatch, setPasswordsMatch] = useState(true);
 
     useEffect(() => {
+        const method = (searchParams.get("method") as ResetMethod | null) || "email";
         const email = searchParams.get("email");
+        const phoneNumber = searchParams.get("phone_number");
+        const role = searchParams.get("role");
         const otp = searchParams.get("otp");
-        if (email && otp) {
-            setCredentials({ email, otp });
+        if (otp && role && ((method === "email" && email) || (method === "phone" && phoneNumber))) {
+            setCredentials({
+                method,
+                email: email || "",
+                phone_number: phoneNumber || "",
+                role,
+                otp,
+            });
         } else {
             router.push("/forgot-password");
         }
@@ -49,11 +60,21 @@ function ResetPasswordContent() {
         setLoading(true);
 
         try {
-            await api.post("/auth/reset-password", {
-                email: credentials.email,
-                otp_code: credentials.otp,
-                new_password: newPassword
-            });
+            const payload = credentials.method === "email"
+                ? {
+                    email: credentials.email,
+                    role: credentials.role,
+                    otp_code: credentials.otp,
+                    new_password: newPassword,
+                }
+                : {
+                    phone_number: credentials.phone_number,
+                    role: credentials.role,
+                    otp_code: credentials.otp,
+                    new_password: newPassword,
+                };
+
+            await api.post("/auth/reset-password", payload);
             setSuccess(true);
             setTimeout(() => {
                 router.push("/login");
@@ -90,7 +111,7 @@ function ResetPasswordContent() {
                     </div>
                 </div>
                 <h1 className="text-2xl font-bold text-foreground">New Password</h1>
-                <p className="text-sm text-muted-foreground">Create a secure new password for your account</p>
+                <p className="text-sm text-muted-foreground">Create a secure new password for your {credentials.method === "email" ? "email" : "phone"} account</p>
             </div>
 
             <div className="p-8 pb-10">

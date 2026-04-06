@@ -6,18 +6,33 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { ShieldCheck } from "lucide-react";
 
+type ResetMethod = "email" | "phone";
+
 function VerifyOTPContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const [method, setMethod] = useState<ResetMethod>("email");
     const [email, setEmail] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [role, setRole] = useState("");
     const otpRef = useRef<HTMLInputElement>(null);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        const methodParam = searchParams.get("method");
         const emailParam = searchParams.get("email");
-        if (emailParam) {
+        const phoneParam = searchParams.get("phone_number");
+        const roleParam = searchParams.get("role");
+
+        if (methodParam === "phone" && phoneParam && roleParam) {
+            setMethod("phone");
+            setPhoneNumber(phoneParam);
+            setRole(roleParam);
+        } else if (emailParam && roleParam) {
+            setMethod("email");
             setEmail(emailParam);
+            setRole(roleParam);
         } else {
             router.push("/forgot-password");
         }
@@ -33,8 +48,20 @@ function VerifyOTPContent() {
         setLoading(true);
 
         try {
-            await api.post("/auth/verify-otp", { email, otp_code: otp });
-            router.push(`/reset-password?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`);
+            const payload = method === "email"
+                ? { email, role, otp_code: otp }
+                : { phone_number: phoneNumber, role, otp_code: otp };
+
+            await api.post("/auth/verify-otp", payload);
+
+            const params = new URLSearchParams({ method, role, otp });
+            if (method === "email") {
+                params.set("email", email);
+            } else {
+                params.set("phone_number", phoneNumber);
+            }
+
+            router.push(`/reset-password?${params.toString()}`);
         } catch (err: any) {
             setError(err.response?.data?.detail || "Invalid OTP. Please try again.");
             setLoading(false);
@@ -50,7 +77,7 @@ function VerifyOTPContent() {
                     </div>
                 </div>
                 <h1 className="text-2xl font-bold text-foreground">Verify OTP</h1>
-                <p className="text-sm text-muted-foreground px-4">Enter the 6-digit code sent to <span className="text-foreground font-bold">{email}</span></p>
+                <p className="text-sm text-muted-foreground px-4">Enter the 6-digit code sent to <span className="text-foreground font-bold">{method === "email" ? email : phoneNumber}</span></p>
             </div>
 
             <div className="p-8 pb-10">

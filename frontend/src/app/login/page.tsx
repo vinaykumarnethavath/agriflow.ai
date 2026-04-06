@@ -141,7 +141,7 @@ export default function LoginPage() {
                             <div className="space-y-1.5">
                                 <div className="flex items-center justify-between">
                                     <label className="text-sm font-semibold text-muted-foreground">Password</label>
-                                    <Link href="/forgot-password" className="text-xs text-green-600 hover:underline font-bold">Forgot password?</Link>
+                                    <Link href="/forgot-password?method=email" className="text-xs text-green-600 hover:underline font-bold">Forgot password?</Link>
                                 </div>
                                 <input type="password" ref={passwordRef} required autoComplete="current-password" placeholder="••••••••" className={inputCls} />
                             </div>
@@ -187,7 +187,7 @@ export default function LoginPage() {
                             <div className="space-y-1.5">
                                 <div className="flex items-center justify-between">
                                     <label className="text-sm font-semibold text-muted-foreground">Password</label>
-                                    <Link href="/forgot-password" className="text-xs text-green-600 hover:underline font-bold">Forgot password?</Link>
+                                    <Link href="/forgot-password?method=phone" className="text-xs text-green-600 hover:underline font-bold">Forgot password?</Link>
                                 </div>
                                 <input
                                     type="password"
