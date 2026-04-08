@@ -383,6 +383,8 @@ async def read_my_orders(
             "discount": o.discount,
             "final_amount": o.final_amount,
             "payment_mode": o.payment_mode,
+            "payment_status": o.payment_status,
+            "payment_id": o.payment_id,
             "status": o.status,
             "created_at": o.created_at.isoformat(),
             "items": rich_items,

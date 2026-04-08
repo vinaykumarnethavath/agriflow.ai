@@ -30,13 +30,15 @@ from fastapi.exceptions import RequestValidationError
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    print(f"\n[422 ERROR] {exc.errors()}")
-    try:
-        body = await request.body()
-        print(f"[422 BODY] {body.decode()}")
-    except:
-        pass
-    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+    safe_errors = []
+    for err in exc.errors():
+        safe_err = dict(err)
+        if "input" in safe_err and isinstance(safe_err["input"], bytes):
+            safe_err["input"] = safe_err["input"].decode("utf-8", "ignore")
+        safe_errors.append(safe_err)
+        
+    print(f"\n[422 ERROR] {safe_errors}")
+    return JSONResponse(status_code=422, content={"detail": safe_errors})
 
 @app.exception_handler(Exception)
 async def debug_exception_handler(request: Request, exc: Exception):

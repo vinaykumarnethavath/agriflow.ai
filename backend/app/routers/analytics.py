@@ -398,3 +398,80 @@ async def get_category_revenue(
     results = (await session.exec(query)).all()
     return [{"category": r[0], "revenue": float(r[1]), "qty_sold": int(r[2])} for r in results]
 
+
+@router.get("/shop/top-products")
+async def get_top_products(
+    period: str = Query("all", description="today|7d|30d|90d|1y|all"),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Returns per-product (batch-wise) sales breakdown with profit, batch number, and remaining inventory."""
+    if current_user.role != "shop":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Date range filter
+    now = datetime.utcnow()
+    today = now.date()
+    date_filter = True
+    if period == "today":
+        start = datetime.combine(today, datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "7d":
+        start = datetime.combine(today - timedelta(days=7), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "30d":
+        start = datetime.combine(today - timedelta(days=30), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "90d":
+        start = datetime.combine(today - timedelta(days=90), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+    elif period == "1y":
+        start = datetime.combine(today - timedelta(days=365), datetime.min.time())
+        date_filter = ShopOrder.created_at >= start
+
+    query = select(
+        ShopOrderItem.product_id,
+        ShopOrderItem.product_name,
+        func.coalesce(func.sum(ShopOrderItem.quantity), 0).label("units_sold"),
+        func.coalesce(func.sum(ShopOrderItem.subtotal), 0.0).label("revenue"),
+    ).join(ShopOrder, ShopOrder.id == ShopOrderItem.order_id).where(
+        ShopOrder.shop_id == current_user.id,
+        ShopOrder.status != "cancelled",
+        date_filter,
+    ).group_by(ShopOrderItem.product_id, ShopOrderItem.product_name).order_by(col("revenue").desc())
+
+    results = (await session.exec(query)).all()
+
+    # Fetch product details for cost and batch info
+    product_ids = [r[0] for r in results]
+    prod_dict: dict = {}
+    if product_ids:
+        prod_stmt = select(Product).where(Product.id.in_(product_ids))
+        prod_res = await session.exec(prod_stmt)
+        prod_dict = {p.id: p for p in prod_res.all()}
+
+    output = []
+    for pid, pname, units_sold, revenue in results:
+        prod = prod_dict.get(pid)
+        cost_price = (prod.cost_price or 0) if prod else 0
+        total_cost = cost_price * units_sold
+        overhead = 0
+        if prod:
+            overhead = ((prod.apportioned_transport or 0) + (prod.apportioned_labour or 0) + (prod.apportioned_other or 0))
+        profit = revenue - total_cost - overhead
+        output.append({
+            "product_id": pid,
+            "product_name": pname,
+            "category": prod.category if prod else "unknown",
+            "batch_number": prod.batch_number if prod else None,
+            "batch_id": pid,
+            "units_sold": int(units_sold),
+            "revenue": float(revenue),
+            "cost_price": cost_price,
+            "total_cost": total_cost,
+            "overhead": overhead,
+            "profit": float(profit),
+            "remaining_qty": prod.quantity if prod else 0,
+        })
+
+    return output

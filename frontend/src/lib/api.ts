@@ -493,9 +493,15 @@ export interface TopProduct {
     product_id: number;
     product_name: string;
     category: string;
+    batch_number?: string;
+    batch_id?: number;
     units_sold: number;
     revenue: number;
+    cost_price?: number;
+    total_cost?: number;
+    overhead?: number;
     profit: number;
+    remaining_qty?: number;
 }
 
 export interface ChannelBreakdown {

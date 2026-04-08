@@ -87,36 +87,6 @@ async def update_product_status(
     db_product.status = new_status
     session.add(db_product)
 
-    # When product goes active, create a ledger entry summarising the batch acquisition costs
-    if new_status == "active" and old_status == "draft":
-        purchase_cost = (db_product.cost_price or 0) * db_product.quantity
-        total_overhead = (db_product.apportioned_transport or 0) + (db_product.apportioned_labour or 0) + (db_product.apportioned_other or 0)
-        total_landed = purchase_cost + total_overhead
-        overhead_breakdown = []
-        if db_product.apportioned_transport:
-            overhead_breakdown.append(f"Transport: ₹{db_product.apportioned_transport:.2f}")
-        if db_product.apportioned_labour:
-            overhead_breakdown.append(f"Labour: ₹{db_product.apportioned_labour:.2f}")
-        if db_product.apportioned_other:
-            overhead_breakdown.append(f"Other: ₹{db_product.apportioned_other:.2f}")
-        overhead_str = " | ".join(overhead_breakdown) if overhead_breakdown else "No overhead"
-        desc = (
-            f"Batch Activated — {db_product.name} (Batch: {db_product.batch_number}) | "
-            f"Qty: {db_product.quantity} {db_product.unit} | "
-            f"Cost/unit: ₹{db_product.cost_price or 0} | "
-            f"Purchase: ₹{purchase_cost:.2f} | "
-            f"{overhead_str} | "
-            f"Total Landed: ₹{total_landed:.2f}"
-        )
-        activation_entry = ShopAccountingExpense(
-            shop_id=current_user.id,
-            category="batch_activation",
-            amount=total_landed,
-            description=desc,
-            linked_product_ids=json.dumps([db_product.id]),
-        )
-        session.add(activation_entry)
-
     await session.commit()
     await session.refresh(db_product)
     return db_product
@@ -311,7 +281,7 @@ async def update_product(
         activation_entry = ShopAccountingExpense(
             shop_id=current_user.id,
             category="batch_activation",
-            amount=total_landed,
+            amount=purchase_cost,
             description=desc,
             linked_product_ids=json.dumps([db_product.id]),
         )

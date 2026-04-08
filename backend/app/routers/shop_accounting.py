@@ -97,13 +97,19 @@ async def get_accounting_summary(
     exp_result = await session.exec(exp_stmt)
     expenses = exp_result.all()
     total_business_expenses = sum(e.amount for e in expenses)
+    # Operational expenses exclude batch_purchase and batch_activation
+    # (those are already reflected in total_cost / product cost)
+    operational_expenses = sum(
+        e.amount for e in expenses
+        if e.category not in ("batch_purchase", "batch_activation")
+    )
 
     # Expense breakdown by category
     expense_by_category = {}
     for e in expenses:
         expense_by_category[e.category] = expense_by_category.get(e.category, 0) + e.amount
 
-    net_profit = total_revenue - total_cost - total_order_expenses - total_business_expenses
+    net_profit = total_revenue - total_cost - total_order_expenses - operational_expenses
 
     return {
         "period": period,

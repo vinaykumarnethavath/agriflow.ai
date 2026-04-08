@@ -338,26 +338,24 @@ export default function ShopAnalyticsPage() {
                             <thead className="bg-gray-50 text-gray-500 font-medium text-[11px] uppercase tracking-wider">
                                 <tr>
                                     <th className="px-6 py-3 border-b border-gray-200">Product</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Batch</th>
                                     <th className="px-6 py-3 border-b border-gray-200">Sell / Cost</th>
-                                    <th className="px-6 py-3 border-b border-gray-200">Batch Overhead</th>
+                                    <th className="px-6 py-3 border-b border-gray-200">Overhead</th>
                                     <th className="px-6 py-3 border-b border-gray-200">Profit</th>
-                                    <th className="px-6 py-3 border-b border-gray-200 text-right">Amount (Revenue)</th>
-                                    <th className="px-6 py-3 border-b border-gray-200 text-right">Units Sold</th>
+                                    <th className="px-6 py-3 border-b border-gray-200 text-right">Revenue</th>
+                                    <th className="px-6 py-3 border-b border-gray-200 text-right">Sold / Remaining</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
                                 {topProducts.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-10 text-center text-gray-400 text-sm">No product sales recorded for this period.</td>
+                                        <td colSpan={7} className="px-6 py-10 text-center text-gray-400 text-sm">No product sales recorded for this period.</td>
                                     </tr>
                                 ) : (
                                     topProducts.map((product, idx) => {
-                                        const prod = productMap[product.product_id];
-                                        const batchOverhead = prod
-                                            ? (prod.apportioned_transport || 0) + (prod.apportioned_labour || 0) + (prod.apportioned_other || 0)
-                                            : 0;
                                         const sellPrice = product.units_sold > 0 ? (product.revenue / product.units_sold) : 0;
-                                        const costPrice = prod?.cost_price || 0;
+                                        const costPrice = product.cost_price || 0;
+                                        const overhead = product.overhead || 0;
                                         return (
                                             <tr key={product.product_id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="px-6 py-3">
@@ -370,15 +368,24 @@ export default function ShopAnalyticsPage() {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-3">
+                                                    {product.batch_number ? (
+                                                        <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                                            {product.batch_number}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-300 text-xs">—</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-3">
                                                     <div className="flex flex-col">
                                                         <span className="font-medium text-slate-700">Sell: ₹{sellPrice.toFixed(2)}</span>
                                                         {costPrice > 0 && <span className="text-xs text-slate-400">Cost: ₹{costPrice.toFixed(2)}</span>}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-3">
-                                                    {batchOverhead > 0 ? (
+                                                    {overhead > 0 ? (
                                                         <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
-                                                            ₹{batchOverhead.toFixed(2)}
+                                                            ₹{overhead.toFixed(2)}
                                                         </span>
                                                     ) : (
                                                         <span className="text-gray-300 text-xs">—</span>
@@ -392,9 +399,14 @@ export default function ShopAnalyticsPage() {
                                                 <td className="px-6 py-3 font-semibold text-slate-800 text-right">
                                                     ₹{product.revenue.toLocaleString()}
                                                 </td>
-                                                <td className="px-6 py-3 text-right text-slate-600">
-                                                    <span className="font-bold">{product.units_sold}</span>
-                                                    <span className="text-xs text-slate-400 ml-1">units</span>
+                                                <td className="px-6 py-3 text-right">
+                                                    <span className="font-bold text-slate-600">{product.units_sold}</span>
+                                                    <span className="text-xs text-slate-400 ml-1">sold</span>
+                                                    {product.remaining_qty !== undefined && (
+                                                        <div className="text-[10px] text-slate-400 mt-0.5">
+                                                            {product.remaining_qty} remaining
+                                                        </div>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );
