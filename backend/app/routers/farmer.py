@@ -10,10 +10,18 @@ from ..models import (
     User, UserRole, FarmerProfile, FarmerProfileCreate, FarmerProfileRead, 
     LandRecord, LandRecordBase,
     Crop, CropExpense, CropExpenseCreate, CropExpenseRead, CropExpenseWithCrop,
-    CropHarvest, CropHarvestCreate, CropHarvestRead
+    CropHarvest, CropHarvestCreate, CropHarvestRead,
+    CropSale, CropSaleCreate, CropSaleRead
 )
 # New Service Import
 from ..services.crop_service import recalculate_crop_financials
+
+
+def safe_display_name(user: User) -> str:
+    full_name = user.full_name or ""
+    if user.email is None and "@" in full_name:
+        return ""
+    return full_name
 
 
 router = APIRouter(prefix="/farmer", tags=["farmer"])
@@ -35,7 +43,7 @@ async def get_farmer_profile(
         
     # Create the read model with current user's name
     profile_read = FarmerProfileRead.from_orm(profile)
-    profile_read.full_name = current_user.full_name
+    profile_read.full_name = safe_display_name(current_user)
     return profile_read
 
 @router.post("/profile", response_model=FarmerProfileRead)
@@ -80,7 +88,7 @@ async def create_or_update_profile(
     db_profile = result_refresh.first()
     
     profile_read = FarmerProfileRead.from_orm(db_profile)
-    profile_read.full_name = current_user.full_name
+    profile_read.full_name = safe_display_name(current_user)
     return profile_read
 
 @router.post("/land-records", response_model=LandRecord)
@@ -387,4 +395,102 @@ async def record_harvest_legacy(
     # Recalculate
     updated_crop = await recalculate_crop_financials(crop_id, session)
     return updated_crop
+
+# --- Crop Sales ---
+
+@router.post("/crops/{crop_id}/sales", response_model=CropSaleRead)
+async def create_crop_sale(
+    crop_id: int,
+    sale_data: CropSaleCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    crop = await session.get(Crop, crop_id)
+    if not crop:
+        raise HTTPException(status_code=404, detail="Crop not found")
+        
+    if crop.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    db_sale = CropSale(**sale_data.dict(exclude={"harvest_ids"}), crop_id=crop_id)
+    session.add(db_sale)
+    
+    # Update linked harvests
+    if sale_data.harvest_ids:
+        for h_id in sale_data.harvest_ids:
+            harvest = await session.get(CropHarvest, h_id)
+            if harvest and harvest.crop_id == crop_id:
+                harvest.status = "Sold"
+                session.add(harvest)
+                
+    await session.commit()
+    await session.refresh(db_sale)
+    
+    # Recalculate crop financials with the new sale
+    await recalculate_crop_financials(crop_id, session)
+    
+    return db_sale
+
+@router.get("/crops/{crop_id}/sales", response_model=List[CropSaleRead])
+async def get_crop_sales(
+    crop_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    crop = await session.get(Crop, crop_id)
+    if not crop:
+        raise HTTPException(status_code=404, detail="Crop not found")
+        
+    if crop.user_id != current_user.id:
+         raise HTTPException(status_code=403, detail="Not authorized")
+         
+    statement = select(CropSale).where(CropSale.crop_id == crop_id).order_by(CropSale.date.desc())
+    result = await session.exec(statement)
+    return result.all()
+
+@router.put("/crops/sales/{sale_id}", response_model=CropSaleRead)
+async def update_crop_sale(
+    sale_id: int,
+    sale_data: CropSaleCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    sale = await session.get(CropSale, sale_id)
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale record not found")
+        
+    crop = await session.get(Crop, sale.crop_id)
+    if crop.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    sale_dict = sale_data.dict(exclude_unset=True)
+    for key, value in sale_dict.items():
+        setattr(sale, key, value)
+        
+    session.add(sale)
+    await session.commit()
+    await session.refresh(sale)
+    
+    await recalculate_crop_financials(crop.id, session)
+    return sale
+
+@router.delete("/crops/sales/{sale_id}")
+async def delete_crop_sale(
+    sale_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    sale = await session.get(CropSale, sale_id)
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale record not found")
+        
+    crop = await session.get(Crop, sale.crop_id)
+    if crop.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    await session.delete(sale)
+    await session.commit()
+    
+    await recalculate_crop_financials(crop.id, session)
+    return {"ok": True}
 

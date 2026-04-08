@@ -19,6 +19,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def generate_otp(length=6):
     return ''.join(random.choices(string.digits, k=length))
 
+def safe_display_name(user: User) -> str:
+    full_name = user.full_name or ""
+    if user.email is None and "@" in full_name:
+        return ""
+    return full_name
+
 @router.post("/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest, session: AsyncSession = Depends(get_session)):
     role_val = request.role.value if hasattr(request.role, "value") else str(request.role)
@@ -378,7 +384,7 @@ async def login(user_data: UserLogin, session: AsyncSession = Depends(get_sessio
             data={"sub": user.phone_number, "role": user.role.value if hasattr(user.role, "value") else user.role, "id": user.id},
             expires_delta=access_token_expires
         )
-        return {"access_token": access_token, "token_type": "bearer", "role": user.role, "id": user.id, "full_name": user.full_name}
+        return {"access_token": access_token, "token_type": "bearer", "role": user.role, "id": user.id, "full_name": safe_display_name(user)}
 
     # Email + password login
     if not user_data.email or not user_data.password:
@@ -417,4 +423,4 @@ async def login(user_data: UserLogin, session: AsyncSession = Depends(get_sessio
     access_token = create_access_token(
         data={"sub": user.email, "role": user.role.value if hasattr(user.role, "value") else user.role, "id": user.id}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer", "role": user.role, "id": user.id, "full_name": user.full_name}
+    return {"access_token": access_token, "token_type": "bearer", "role": user.role, "id": user.id, "full_name": safe_display_name(user)}

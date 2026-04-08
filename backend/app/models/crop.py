@@ -38,6 +38,7 @@ class CropHarvestBase(SQLModel):
     buyer_type: str # Market, Private, Government
     sold_to: Optional[str] = None
     notes: Optional[str] = None
+    status: str = "Available" # Available, Sold
 
 class CropHarvest(CropHarvestBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -96,3 +97,29 @@ class CropExpenseRead(CropExpenseBase):
 
 class CropExpenseWithCrop(CropExpenseRead):
     crop_name: str
+
+class CropSaleBase(SQLModel):
+    date: datetime
+    buyer_type: str # Mill, Market, Direct, Trader
+    buyer_name: str
+    buyer_id: Optional[str] = None
+    quantity_quintals: float
+    total_bags: int
+    bag_size: int
+    price_per_quintal: float
+    total_revenue: float
+    payment_mode: str
+    notes: Optional[str] = None
+    status: str = "listed" # listed, sold
+
+class CropSale(CropSaleBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    crop_id: int = Field(foreign_key="crop.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CropSaleCreate(CropSaleBase):
+    harvest_ids: list[int] = []
+
+class CropSaleRead(CropSaleBase):
+    id: int
+    crop_id: int

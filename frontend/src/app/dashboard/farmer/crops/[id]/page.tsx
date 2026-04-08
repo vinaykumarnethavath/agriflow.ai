@@ -20,6 +20,10 @@ import api, {
     updateCropExpense,
     updateCropHarvest,
     deleteCropHarvest,
+    getCropSales,
+    createCropSale,
+    deleteCropSale,
+    CropSale
 } from "@/lib/api";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
 import { Modal } from "@/components/ui/modal";
@@ -169,7 +173,7 @@ export default function CropDetailPage() {
 
     // Form States
     const [showExpenseForm, setShowExpenseForm] = useState(false);
-    const [newExpense, setNewExpense] = useState<Partial<CropExpense>>({
+    const [newExpense, setNewExpense] = useState<Partial<CropExpense & { area_acres?: number; cost_per_acre?: number; direct_total?: number }>>({
         category: "Input",
         type: "",
         quantity: 0,
@@ -182,6 +186,9 @@ export default function CropDetailPage() {
         unit_size: 1, // Default to 1 (e.g. 1 kg bag)
         duration: 1, // Default to 1 day
         stage: "General",
+        area_acres: 0,
+        cost_per_acre: 0,
+        direct_total: 0,
     });
     const [uploading, setUploading] = useState(false);
     const [mockOptions, setMockOptions] = useState<any>(null);
@@ -227,8 +234,11 @@ export default function CropDetailPage() {
         payment_mode: "Cash",
         notes: "",
     });
-    const [sellListings, setSellListings] = useState<any[]>([]);
+    const [sellListings, setSellListings] = useState<CropSale[]>([]);
     const [sellSubmitting, setSellSubmitting] = useState(false);
+
+    // Harvest multi-select for batch selling
+    const [selectedHarvestIds, setSelectedHarvestIds] = useState<number[]>([]);
 
     useEffect(() => {
         if (crop) {
@@ -255,12 +265,14 @@ export default function CropDetailPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [cropData, expenseData, aiData, profileRes, cropsRes] = await Promise.all([
+            const [cropData, expenseData, aiData, profileRes, cropsRes, salesData, harvestsData] = await Promise.all([
                 getCropDetails(cropId),
                 getCropExpenses(cropId),
                 getCropInsights(cropId).catch(() => ({ insights: [], prediction: null })),
                 api.get("/farmer/profile").catch(() => ({ data: null })),
-                api.get("/crops/").catch(() => ({ data: [] }))
+                api.get("/crops/").catch(() => ({ data: [] })),
+                getCropSales(cropId).catch(() => []),
+                getCropHarvests(cropId).catch(() => [])
             ]);
 
             setCrop(cropData);
@@ -269,6 +281,8 @@ export default function CropDetailPage() {
             setPrediction(aiData?.prediction || null);
             setProfile(profileRes?.data || null);
             setAllCrops(cropsRes?.data || []);
+            setSellListings(salesData || []);
+            setHarvests(harvestsData || []);
         } catch (error) {
             console.error("Error fetching crop details:", error);
         } finally {
@@ -276,7 +290,7 @@ export default function CropDetailPage() {
         }
     };
 
-    const calculateTotalCost = (expense: Partial<CropExpense>) => {
+    const calculateTotalCost = (expense: Partial<CropExpense & { area_acres?: number; cost_per_acre?: number; direct_total?: number }>) => {
         const qty = expense.quantity || 0;
         const cost = expense.unit_cost || 0;
 
@@ -284,11 +298,18 @@ export default function CropDetailPage() {
             const duration = expense.duration || 1;
             return qty * cost * duration;
         } else if (expense.category === "Input") {
-            const size = expense.unit_size || 1;
             if (expense.unit === "bags" || expense.unit === "liters" || expense.unit === "packets") {
-                // Number * Size * Unit Cost
-                return qty * size * cost;
+                // Number of containers × Cost per container
+                return qty * cost;
             }
+        } else if (expense.category === "Machinery" || expense.category === "Irrigation") {
+            // Area (acres) × Cost per acre
+            const area = (expense as any).area_acres || 0;
+            const costPerAcre = (expense as any).cost_per_acre || 0;
+            return area * costPerAcre;
+        } else if (expense.category === "Logistics" || expense.category === "Miscellaneous") {
+            // Direct total cost — no breakdown
+            return (expense as any).direct_total || 0;
         }
         return qty * cost;
     };
@@ -378,8 +399,11 @@ export default function CropDetailPage() {
                 unit_size: 1,
                 duration: 1,
                 stage: "General",
-                notes: ""
-            });
+                notes: "",
+                area_acres: crop?.area || 0,
+                cost_per_acre: 0,
+                direct_total: 0,
+            } as any);
         } catch (error) {
             console.error("Error saving expense:", error);
             alert("Failed to save expense");
@@ -400,7 +424,10 @@ export default function CropDetailPage() {
             unit_size: expense.unit_size || 1,
             duration: expense.duration || 1,
             stage: expense.stage || "General",
-        });
+            area_acres: (expense as any).area_acres || crop?.area || 0,
+            cost_per_acre: (expense as any).cost_per_acre || 0,
+            direct_total: expense.total_cost || 0,
+        } as any);
         setEditingExpenseId(expense.id);
         setShowExpenseForm(true);
     };
@@ -710,7 +737,10 @@ export default function CropDetailPage() {
                                     unit_size: 1,
                                     duration: 1,
                                     stage: "General",
-                                });
+                                    area_acres: crop?.area || 0,
+                                    cost_per_acre: 0,
+                                    direct_total: 0,
+                                } as any);
                                 setShowExpenseForm(!showExpenseForm);
                             }} className="bg-green-600 hover:bg-green-700">
                                 <Plus className="w-4 h-4 mr-2" /> Add Expense
@@ -768,44 +798,98 @@ export default function CropDetailPage() {
                                             </select>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">
-                                                {newExpense.category === "Labor" ? "No. of Workers" :
-                                                    newExpense.unit === "bags" ? "No. of Bags" :
-                                                        newExpense.unit === "liters" ? "No. of Bottles" :
-                                                            newExpense.unit === "packets" ? "No. of Packets" : "Quantity"}
-                                            </label>
-                                            <div className="flex gap-2">
-                                                <Input
-                                                    type="number"
-                                                    value={newExpense.quantity}
-                                                    onChange={(e) => setNewExpense({ ...newExpense, quantity: Number(e.target.value) })}
-                                                />
-                                                <select
-                                                    className="w-24 p-2 border rounded-md"
-                                                    value={newExpense.unit}
-                                                    onChange={(e) => setNewExpense({ ...newExpense, unit: e.target.value })}
-                                                >
-                                                    {newExpense.category === "Labor" ? (
-                                                        <>
-                                                            <option value="workers">workers</option>
-                                                            <option value="hours">hours</option>
-                                                        </>
-                                                    ) : (
-                                                        <>
+                                        {/* ── CATEGORY: INPUT (Seeds, Fertilizers, Pesticides) ── */}
+                                        {newExpense.category === "Input" && (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">
+                                                        {newExpense.unit === "bags" ? "No. of Bags" :
+                                                            newExpense.unit === "liters" ? "No. of Bottles" :
+                                                                newExpense.unit === "packets" ? "No. of Packets" : "Quantity"}
+                                                    </label>
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            type="number"
+                                                            value={newExpense.quantity}
+                                                            onChange={(e) => setNewExpense({ ...newExpense, quantity: Number(e.target.value) })}
+                                                        />
+                                                        <select
+                                                            className="w-28 p-2 border rounded-md"
+                                                            value={newExpense.unit}
+                                                            onChange={(e) => setNewExpense({ ...newExpense, unit: e.target.value })}
+                                                        >
                                                             <option value="kg">kg</option>
                                                             <option value="bags">bags</option>
                                                             <option value="liters">liters (bottles)</option>
                                                             <option value="packets">packets</option>
                                                             <option value="units">units</option>
-                                                        </>
-                                                    )}
-                                                </select>
-                                            </div>
-                                        </div>
+                                                        </select>
+                                                    </div>
+                                                </div>
 
+                                                {(newExpense.unit === "bags" || newExpense.unit === "liters" || newExpense.unit === "packets") && (
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium">
+                                                            {newExpense.unit === "bags" ? "Size per Bag (kg)" :
+                                                                newExpense.unit === "liters" ? "Volume per Bottle (L)" :
+                                                                    "Weight per Packet (g/kg)"}
+                                                        </label>
+                                                        <Input
+                                                            type="number"
+                                                            value={newExpense.unit_size}
+                                                            onChange={(e) => setNewExpense({ ...newExpense, unit_size: Number(e.target.value) })}
+                                                        />
+                                                        <p className="text-xs text-gray-400 italic">Informational only -- shows total quantity used</p>
+                                                    </div>
+                                                )}
+
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">
+                                                        {newExpense.unit === "bags" ? "Cost per Bag (\u20b9)" :
+                                                            newExpense.unit === "liters" ? "Cost per Bottle (\u20b9)" :
+                                                                newExpense.unit === "packets" ? "Cost per Packet (\u20b9)" : "Unit Cost (\u20b9)"}
+                                                    </label>
+                                                    <Input
+                                                        type="number"
+                                                        value={newExpense.unit_cost}
+                                                        onChange={(e) => setNewExpense({ ...newExpense, unit_cost: Number(e.target.value) })}
+                                                    />
+                                                </div>
+
+                                                {(newExpense.unit === "bags" || newExpense.unit === "liters" || newExpense.unit === "packets") && (
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium">Total Quantity</label>
+                                                        <div className="p-2 bg-muted border rounded-md text-foreground">
+                                                            {newExpense.unit === "bags" ? `${(newExpense.quantity || 0)} bags \u00d7 ${newExpense.unit_size || 0} kg/bag = ${(newExpense.quantity || 0) * (newExpense.unit_size || 0)} kg` :
+                                                                newExpense.unit === "liters" ? `${(newExpense.quantity || 0)} bottles \u00d7 ${newExpense.unit_size || 0} L/bottle` :
+                                                                    `${(newExpense.quantity || 0)} packets \u00d7 ${newExpense.unit_size || 0} g/packet`}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* ── CATEGORY: LABOR ── */}
                                         {newExpense.category === "Labor" && (
                                             <>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">No. of Workers</label>
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            type="number"
+                                                            value={newExpense.quantity}
+                                                            onChange={(e) => setNewExpense({ ...newExpense, quantity: Number(e.target.value) })}
+                                                        />
+                                                        <select
+                                                            className="w-28 p-2 border rounded-md"
+                                                            value={newExpense.unit}
+                                                            onChange={(e) => setNewExpense({ ...newExpense, unit: e.target.value })}
+                                                        >
+                                                            <option value="workers">workers</option>
+                                                            <option value="hours">hours</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
                                                 <div className="space-y-2">
                                                     <label className="text-sm font-medium">Round / Activity Name</label>
                                                     <Input
@@ -822,53 +906,68 @@ export default function CropDetailPage() {
                                                         onChange={(e) => setNewExpense({ ...newExpense, duration: Number(e.target.value) })}
                                                     />
                                                 </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Wage per Person/Day (\u20b9)</label>
+                                                    <Input
+                                                        type="number"
+                                                        value={newExpense.unit_cost}
+                                                        onChange={(e) => setNewExpense({ ...newExpense, unit_cost: Number(e.target.value) })}
+                                                    />
+                                                </div>
                                             </>
                                         )}
 
-                                        {newExpense.category === "Input" && (newExpense.unit === "bags" || newExpense.unit === "liters" || newExpense.unit === "packets") && (
+                                        {/* ── CATEGORY: MACHINERY / IRRIGATION (Area × Cost per Acre) ── */}
+                                        {(newExpense.category === "Machinery" || newExpense.category === "Irrigation") && (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Area (Acres)</label>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={(newExpense as any).area_acres || ""}
+                                                        onChange={(e) => setNewExpense({ ...newExpense, area_acres: Number(e.target.value) } as any)}
+                                                        placeholder={`Crop area: ${crop?.area || 0} acres`}
+                                                    />
+                                                    <p className="text-xs text-gray-400 italic">Your crop area is {formatLandArea(crop?.area || 0)} Ac</p>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Cost per Acre (\u20b9)</label>
+                                                    <Input
+                                                        type="number"
+                                                        value={(newExpense as any).cost_per_acre || ""}
+                                                        onChange={(e) => setNewExpense({ ...newExpense, cost_per_acre: Number(e.target.value) } as any)}
+                                                        placeholder="e.g., 1000"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* ── CATEGORY: LOGISTICS / MISCELLANEOUS (Direct Total) ── */}
+                                        {(newExpense.category === "Logistics" || newExpense.category === "Miscellaneous") && (
                                             <div className="space-y-2">
-                                                <label className="text-sm font-medium">
-                                                    {newExpense.unit === "bags" ? "Size per Bag (kg)" :
-                                                        newExpense.unit === "liters" ? "Volume per Bottle (ml/L)" :
-                                                            "Weight per Packet (g/kg)"}
-                                                </label>
+                                                <label className="text-sm font-medium">Total Cost (\u20b9)</label>
                                                 <Input
                                                     type="number"
-                                                    value={newExpense.unit_size}
-                                                    onChange={(e) => setNewExpense({ ...newExpense, unit_size: Number(e.target.value) })}
+                                                    value={(newExpense as any).direct_total || ""}
+                                                    onChange={(e) => setNewExpense({ ...newExpense, direct_total: Number(e.target.value) } as any)}
+                                                    placeholder="Enter the full amount"
                                                 />
+                                                <p className="text-xs text-gray-400 italic">Enter the total expense amount directly</p>
                                             </div>
                                         )}
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">
-                                                {newExpense.category === "Labor" ? "Wage per Person/Day (₹)" :
-                                                    newExpense.unit === "bags" ? "Cost per kg (₹)" :
-                                                        newExpense.unit === "liters" ? "Cost per Bottle (₹)" :
-                                                            newExpense.unit === "packets" ? "Cost per Packet (₹)" : "Unit Cost (₹)"}
-                                            </label>
-                                            <Input
-                                                type="number"
-                                                value={newExpense.unit_cost}
-                                                onChange={(e) => setNewExpense({ ...newExpense, unit_cost: Number(e.target.value) })}
-                                            />
-                                        </div>
-
-                                        {newExpense.category === "Input" && (newExpense.unit === "bags" || newExpense.unit === "liters" || newExpense.unit === "packets") && (
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium">Total Quantity</label>
-                                                <div className="p-2 bg-muted border rounded-md text-foreground">
-                                                    {newExpense.unit === "bags" ? `${(newExpense.quantity || 0) * (newExpense.unit_size || 0)} kg` :
-                                                        newExpense.unit === "liters" ? `${(newExpense.quantity || 0)} bottles × ${newExpense.unit_size || 0} ml each` :
-                                                            `${(newExpense.quantity || 0)} packets × ${newExpense.unit_size || 0} g each`}
-                                                </div>
-                                            </div>
-                                        )}
+                                        {/* Total Cost (computed) — shown for all categories */}
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium">Total Cost (₹)</label>
-                                            <div className="p-2 bg-muted border rounded-md font-bold text-foreground">
+                                            <div className="p-2 bg-muted border rounded-md font-bold text-foreground text-lg">
                                                 ₹ {calculateTotalCost(newExpense).toLocaleString()}
                                             </div>
+                                            {(newExpense.category === "Machinery" || newExpense.category === "Irrigation") && (newExpense as any).area_acres > 0 && (newExpense as any).cost_per_acre > 0 && (
+                                                <p className="text-xs text-gray-500">{(newExpense as any).area_acres} acres × ₹{(newExpense as any).cost_per_acre}/acre</p>
+                                            )}
+                                            {newExpense.category === "Input" && (newExpense.unit === "bags" || newExpense.unit === "liters" || newExpense.unit === "packets") && (newExpense.quantity || 0) > 0 && (newExpense.unit_cost || 0) > 0 && (
+                                                <p className="text-xs text-gray-500">{newExpense.quantity} × ₹{newExpense.unit_cost}/{newExpense.unit === "bags" ? "bag" : newExpense.unit === "liters" ? "bottle" : "packet"}</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium">Date</label>
@@ -961,19 +1060,30 @@ export default function CropDetailPage() {
                                                     </div>
                                                     {expense.unit === 'bags' ? (
                                                         <div className="text-sm text-teal-700 font-medium">
-                                                            {expense.quantity} bags × {expense.unit_size || 1} kg/bag × ₹{expense.unit_cost}/bag
+                                                            {expense.quantity} bags × ₹{expense.unit_cost}/bag
+                                                            <span className="text-xs text-gray-400 ml-1">({expense.unit_size || 1} kg/bag = {(expense.quantity || 0) * (expense.unit_size || 1)} kg)</span>
                                                         </div>
                                                     ) : expense.unit === 'liters' ? (
                                                         <div className="text-sm text-blue-700 font-medium">
-                                                            {expense.quantity} bottles × {expense.unit_size || 1} L/bottle × ₹{expense.unit_cost}/L
+                                                            {expense.quantity} bottles × ₹{expense.unit_cost}/bottle
+                                                            <span className="text-xs text-gray-400 ml-1">({expense.unit_size || 1} L each)</span>
                                                         </div>
                                                     ) : expense.unit === 'packets' ? (
                                                         <div className="text-sm text-purple-700 font-medium">
-                                                            {expense.quantity} packets × {expense.unit_size || 1} g/packet × ₹{expense.unit_cost}/g
+                                                            {expense.quantity} packets × ₹{expense.unit_cost}/packet
+                                                            <span className="text-xs text-gray-400 ml-1">({expense.unit_size || 1} g each)</span>
                                                         </div>
                                                     ) : expense.category === 'Labor' ? (
                                                         <div className="text-sm text-orange-700 font-medium">
                                                             {expense.quantity} workers × {expense.duration || 1} days × ₹{expense.unit_cost}/day
+                                                        </div>
+                                                    ) : (expense.category === 'Machinery' || expense.category === 'Irrigation') ? (
+                                                        <div className="text-sm text-indigo-700 font-medium">
+                                                            {expense.quantity || (expense as any).area_acres || '-'} acres × ₹{expense.unit_cost || (expense as any).cost_per_acre || '-'}/acre
+                                                        </div>
+                                                    ) : (expense.category === 'Logistics' || expense.category === 'Miscellaneous') ? (
+                                                        <div className="text-sm text-gray-700 font-medium">
+                                                            Total: ₹{expense.total_cost?.toLocaleString()}
                                                         </div>
                                                     ) : (
                                                         <div className="text-sm text-muted-foreground">
@@ -1050,6 +1160,20 @@ export default function CropDetailPage() {
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-gray-50 text-gray-700 font-medium">
                                     <tr>
+                                        <th className="p-4 w-10">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded"
+                                                checked={selectedHarvestIds.length === harvests.length && harvests.length > 0}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedHarvestIds(harvests.map(h => h.id));
+                                                    } else {
+                                                        setSelectedHarvestIds([]);
+                                                    }
+                                                }}
+                                            />
+                                        </th>
                                         <th className="p-4">Date</th>
                                         <th className="p-4">Stage</th>
                                         <th className="p-4">No. of Bags</th>
@@ -1062,27 +1186,79 @@ export default function CropDetailPage() {
                                 <tbody className="divide-y divide-gray-100">
                                     {harvests.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="p-8 text-center text-gray-500">No harvest records yet.</td>
+                                            <td colSpan={8} className="p-8 text-center text-gray-500">No harvest records yet.</td>
                                         </tr>
                                     ) : harvests.map((h) => {
                                         const bagSize = (h as any).unit_size || 50;
                                         const quintals = h.quantity; // already stored in quintals
                                         const bags = bagSize > 0 ? Math.round((quintals * 100) / bagSize) : '-';
+                                        const isSelected = selectedHarvestIds.includes(h.id);
                                         return (
-                                            <tr key={h.id} className="hover:bg-gray-50">
+                                            <tr key={h.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-green-50' : ''}`}>
+                                                <td className="p-4">
+                                                    {h.status === 'Sold' ? (
+                                                        <span className="bg-gray-200 text-gray-500 text-xs px-2 py-1 rounded font-semibold uppercase">Sold</span>
+                                                    ) : (
+                                                        <input
+                                                            type="checkbox"
+                                                            className="rounded"
+                                                            checked={isSelected}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) {
+                                                                    setSelectedHarvestIds(prev => [...prev, h.id]);
+                                                                } else {
+                                                                    setSelectedHarvestIds(prev => prev.filter(id => id !== h.id));
+                                                                }
+                                                            }}
+                                                        />
+                                                    )}
+                                                </td>
                                                 <td className="p-4 text-gray-800">{new Date(h.date).toLocaleDateString()}</td>
                                                 <td className="p-4 font-medium text-gray-800">{h.stage}</td>
                                                 <td className="p-4 font-bold text-green-700">{bags} bags</td>
                                                 <td className="p-4 text-gray-700">{bagSize} kg/bag</td>
                                                 <td className="p-4 font-bold text-gray-800">{quintals.toFixed(2)} Q</td>
                                                 <td className="p-4 text-gray-600">{h.notes || '-'}</td>
-                                                <td className="p-4 text-right">
-                                                    <Button variant="ghost" size="sm" onClick={() => handleEditHarvest(h)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 mr-2">
-                                                        <Pencil className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteHarvest(h.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                <td className="p-4 text-right flex items-center justify-end gap-1">
+                                                    {h.status === 'Sold' ? (
+                                                        <span className="text-gray-400 text-sm italic">Listing created</span>
+                                                    ) : (
+                                                        <>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    // Sell this single harvest
+                                                                    const bSize = (h as any).unit_size || 50;
+                                                                    const bCount = bSize > 0 ? Math.round((h.quantity * 100) / bSize) : 0;
+                                                                    setSellForm({
+                                                                        buyer_type: "Mill",
+                                                                        buyer_name: "",
+                                                                        buyer_id: "",
+                                                                        price_per_quintal: 0,
+                                                                        quantity_quintals: Number(h.quantity.toFixed(2)),
+                                                                        total_bags: Number(bCount),
+                                                                        bag_size: bSize,
+                                                                        payment_mode: "Cash",
+                                                                        notes: `From harvest: ${h.stage}`,
+                                                                    });
+                                                                    setShowSellForm(true);
+                                                                    setActiveTab("sell");
+                                                                    setSelectedHarvestIds([h.id]);
+                                                                }}
+                                                                className="text-green-600 hover:text-green-800 hover:bg-green-50"
+                                                                title="Sell this harvest"
+                                                            >
+                                                                <ShoppingCart className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="sm" onClick={() => handleEditHarvest(h)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50">
+                                                                <Pencil className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="sm" onClick={() => handleDeleteHarvest(h.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );
@@ -1090,6 +1266,46 @@ export default function CropDetailPage() {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Sell Selected Harvests Button */}
+                        {selectedHarvestIds.length > 0 && (
+                            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-4">
+                                <div>
+                                    <p className="font-semibold text-green-800">{selectedHarvestIds.length} harvest(s) selected</p>
+                                    <p className="text-sm text-green-600">
+                                        Total: {harvests.filter(h => selectedHarvestIds.includes(h.id)).reduce((sum, h) => sum + h.quantity, 0).toFixed(2)} Quintals
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={() => {
+                                        const selected = harvests.filter(h => selectedHarvestIds.includes(h.id));
+                                        const totalQuintals = selected.reduce((sum, h) => sum + h.quantity, 0);
+                                        // Use the bag size from the first selected
+                                        const firstBagSize = (selected[0] as any)?.unit_size || 50;
+                                        const totalBags = firstBagSize > 0 ? Math.round((totalQuintals * 100) / firstBagSize) : 0;
+                                        const stageNames = selected.map(h => h.stage).join(', ');
+
+                                        setSellForm({
+                                            buyer_type: "Mill",
+                                            buyer_name: "",
+                                            buyer_id: "",
+                                            price_per_quintal: 0,
+                                            quantity_quintals: Number(totalQuintals.toFixed(2)),
+                                            total_bags: totalBags,
+                                            bag_size: firstBagSize,
+                                            payment_mode: "Cash",
+                                            notes: `From harvests: ${stageNames}`,
+                                        });
+                                        setShowSellForm(true);
+                                        setActiveTab("sell");
+                                        setSelectedHarvestIds([]);
+                                    }}
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                    <ShoppingCart className="w-4 h-4 mr-2" /> Sell Selected
+                                </Button>
+                            </div>
+                        )}
 
                         <Modal isOpen={showHarvestModal} onClose={() => setShowHarvestModal(false)} title={editingHarvestId ? "Edit Harvest Record" : "Record Harvest"}>
                             <div className="space-y-4">
@@ -1205,11 +1421,11 @@ export default function CropDetailPage() {
                                         <div className="font-bold text-emerald-900 text-lg mb-1">{item.type}</div>
                                         <div className="text-sm text-emerald-800 font-medium">
                                             {item.unit === 'bags' ? (
-                                                <span>{item.totalQty} bags × {item.unitSize} kg/bag × ₹{item.unitCost}/kg</span>
+                                                <span>{item.totalQty} bags × ₹{item.unitCost}/bag <span className="text-xs text-gray-400">({item.unitSize} kg/bag)</span></span>
                                             ) : item.unit === 'liters' ? (
-                                                <span>{item.totalQty} bottles × {item.unitSize} L/bottle × ₹{item.unitCost}/L</span>
+                                                <span>{item.totalQty} bottles × ₹{item.unitCost}/bottle <span className="text-xs text-gray-400">({item.unitSize} L each)</span></span>
                                             ) : item.unit === 'packets' ? (
-                                                <span>{item.totalQty} packets × {item.unitSize} g/packet × ₹{item.unitCost}/g</span>
+                                                <span>{item.totalQty} packets × ₹{item.unitCost}/packet <span className="text-xs text-gray-400">({item.unitSize} g each)</span></span>
                                             ) : (
                                                 <span>{item.totalQty} {item.unit} × ₹{item.unitCost}/{item.unit}</span>
                                             )}
@@ -1257,7 +1473,7 @@ export default function CropDetailPage() {
                                             <select
                                                 className="w-full p-2 border rounded-md text-gray-800 bg-white"
                                                 value={sellForm.buyer_type}
-                                                onChange={(e) => setSellForm({ ...sellForm, buyer_type: e.target.value })}
+                                                onChange={(e) => setSellForm({ ...sellForm, buyer_type: e.target.value, buyer_name: "", buyer_id: "" })}
                                             >
                                                 <option value="Mill">Mill Owner</option>
                                                 <option value="Market">Market / Mandi</option>
@@ -1266,20 +1482,36 @@ export default function CropDetailPage() {
                                             </select>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Buyer Name</label>
+                                            <label className="text-sm font-medium text-gray-700">
+                                                {sellForm.buyer_type === "Mill" ? "Mill Name" :
+                                                 sellForm.buyer_type === "Market" ? "Market / Mandi Name" :
+                                                 sellForm.buyer_type === "Direct" ? "Buyer Name" : "Trader Name"}
+                                            </label>
                                             <Input
                                                 value={sellForm.buyer_name}
                                                 onChange={(e) => setSellForm({ ...sellForm, buyer_name: e.target.value })}
-                                                placeholder="e.g., Ranga Reddy Rice Mill"
+                                                placeholder={
+                                                    sellForm.buyer_type === "Mill" ? "e.g., Ranga Reddy Rice Mill" :
+                                                    sellForm.buyer_type === "Market" ? "e.g., Karnal Mandi, Nizamabad Market" :
+                                                    sellForm.buyer_type === "Direct" ? "e.g., Ramesh Kumar" : "e.g., Agarwal Traders"
+                                                }
                                                 className="text-gray-800"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Buyer ID / Registration No.</label>
+                                            <label className="text-sm font-medium text-gray-700">
+                                                {sellForm.buyer_type === "Mill" ? "Mill License No." :
+                                                 sellForm.buyer_type === "Market" ? "Location" :
+                                                 sellForm.buyer_type === "Direct" ? "Phone Number" : "Phone Number"}
+                                            </label>
                                             <Input
                                                 value={sellForm.buyer_id}
                                                 onChange={(e) => setSellForm({ ...sellForm, buyer_id: e.target.value })}
-                                                placeholder="e.g., MILL-001, Aadhaar last 4"
+                                                placeholder={
+                                                    sellForm.buyer_type === "Mill" ? "e.g., MILL-2024-001" :
+                                                    sellForm.buyer_type === "Market" ? "e.g., NH-44 Bypass, Karnal" :
+                                                    "e.g., 9876543210"
+                                                }
                                                 className="text-gray-800"
                                             />
                                         </div>
@@ -1375,17 +1607,18 @@ export default function CropDetailPage() {
                                                 }
                                                 setSellSubmitting(true);
                                                 try {
-                                                    // Add to local listings (could be saved to backend in future)
+                                                    const total_revenue = sellForm.quantity_quintals * sellForm.price_per_quintal;
                                                     const listing = {
                                                         ...sellForm,
-                                                        id: Date.now(),
-                                                        crop_name: crop?.name || "Unknown",
-                                                        total_revenue: sellForm.quantity_quintals * sellForm.price_per_quintal,
+                                                        total_revenue,
                                                         date: new Date().toISOString(),
-                                                        status: "listed"
+                                                        status: "listed",
+                                                        harvest_ids: selectedHarvestIds.length > 0 ? selectedHarvestIds : undefined
                                                     };
-                                                    setSellListings(prev => [listing, ...prev]);
+                                                    await createCropSale(cropId, listing);
                                                     setShowSellForm(false);
+                                                    setSelectedHarvestIds([]);
+                                                    fetchData(); // Reload entirely
                                                     setSellForm({
                                                         buyer_type: "Mill",
                                                         buyer_name: "",
@@ -1397,8 +1630,9 @@ export default function CropDetailPage() {
                                                         payment_mode: "Cash",
                                                         notes: "",
                                                     });
-                                                } catch (error) {
+                                                } catch (error: any) {
                                                     console.error("Failed to create listing:", error);
+                                                    alert("Failed to create listing: " + (error.response?.data?.detail || error.message));
                                                 } finally {
                                                     setSellSubmitting(false);
                                                 }
@@ -1424,40 +1658,85 @@ export default function CropDetailPage() {
                                 </Button>
                             </div>
                         ) : (
-                            <div className="space-y-4">
-                                {sellListings.map((listing) => (
-                                    <Card key={listing.id} className="border-gray-200 hover:shadow-md transition-shadow">
-                                        <CardContent className="p-5">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <Store className="w-4 h-4 text-blue-600" />
-                                                        <span className="font-bold text-gray-800">{listing.buyer_name}</span>
-                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{listing.buyer_type}</span>
-                                                        {listing.buyer_id && (
-                                                            <span className="text-xs text-gray-500">ID: {listing.buyer_id}</span>
+                            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm text-gray-700">
+                                        <thead className="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th className="p-4 font-semibold text-gray-600">Date</th>
+                                                <th className="p-4 font-semibold text-gray-600">Buyer</th>
+                                                <th className="p-4 font-semibold text-gray-600 text-center">Quantity</th>
+                                                <th className="p-4 font-semibold text-gray-600 text-right">Rate (₹)</th>
+                                                <th className="p-4 font-semibold text-gray-600 text-right">Total Revenue</th>
+                                                <th className="p-4 font-semibold text-gray-600 text-center">Status</th>
+                                                <th className="p-4 font-semibold text-gray-600 text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {sellListings.map((listing) => (
+                                                <tr key={listing.id} className="hover:bg-gray-50/50 transition-colors">
+                                                    <td className="p-4 whitespace-nowrap">
+                                                        <div className="font-medium">{new Date(listing.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                                                        <div className="text-xs text-gray-500 mt-0.5">{listing.payment_mode}</div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <Store className="w-4 h-4 text-blue-500" />
+                                                            <span className="font-semibold text-gray-900">{listing.buyer_name}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-100">
+                                                                {listing.buyer_type}
+                                                            </span>
+                                                            {listing.buyer_id && <span className="text-xs text-gray-500">ID: {listing.buyer_id}</span>}
+                                                        </div>
+                                                        {listing.notes && <div className="text-xs text-gray-500 mt-1 italic max-w-[200px] truncate" title={listing.notes}>{listing.notes}</div>}
+                                                    </td>
+                                                    <td className="p-4 text-center">
+                                                        <div className="font-bold text-gray-900">{listing.quantity_quintals} Q</div>
+                                                        {listing.total_bags > 0 && (
+                                                            <div className="text-xs text-gray-500 mt-0.5">
+                                                                {listing.total_bags} bags ({listing.bag_size || 50}kg)
+                                                            </div>
                                                         )}
-                                                    </div>
-                                                    <p className="text-sm text-gray-500">
-                                                        {listing.total_bags > 0 && `${listing.total_bags} bags (${listing.bag_size || 50} kg) • `}
-                                                        {listing.quantity_quintals} quintals @ ₹{listing.price_per_quintal}/quintal
-                                                    </p>
-                                                    <p className="text-xs text-gray-400 mt-1">
-                                                        {new Date(listing.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                        {listing.payment_mode && ` • ${listing.payment_mode}`}
-                                                    </p>
-                                                    {listing.notes && <p className="text-xs text-gray-500 mt-1">{listing.notes}</p>}
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-xl font-bold text-green-700">₹{listing.total_revenue.toLocaleString()}</p>
-                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${listing.status === 'sold' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                        {listing.status === 'sold' ? 'Sold' : 'Listed'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
+                                                    </td>
+                                                    <td className="p-4 text-right font-medium text-gray-700">
+                                                        ₹{listing.price_per_quintal.toLocaleString()}/Q
+                                                    </td>
+                                                    <td className="p-4 text-right">
+                                                        <div className="text-lg font-black text-green-700">
+                                                            ₹{listing.total_revenue.toLocaleString()}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-center">
+                                                        <span className={`inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold rounded-full ${listing.status === 'sold' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}`}>
+                                                            {listing.status === 'sold' ? 'Sold' : 'Listed'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4 text-center">
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="sm" 
+                                                            onClick={async () => {
+                                                                if(confirm("Delete this listing?")) {
+                                                                    try {
+                                                                        await deleteCropSale(listing.id);
+                                                                        fetchData();
+                                                                    } catch (e: any) {
+                                                                        alert("Failed to delete: " + (e.response?.data?.detail || e.message));
+                                                                    }
+                                                                }
+                                                            }} 
+                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         )}
                     </div>

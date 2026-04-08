@@ -15,6 +15,13 @@ from ..models import (
 
 router = APIRouter(tags=["profiles"])
 
+
+def safe_display_name(user: User) -> str:
+    full_name = user.full_name or ""
+    if user.email is None and "@" in full_name:
+        return ""
+    return full_name
+
 # --- Mill Profile Endpoints ---
 
 @router.get("/manufacturer/profile", response_model=MillProfileRead)
@@ -33,7 +40,7 @@ async def get_mill_profile(
         raise HTTPException(status_code=404, detail="Mill profile not found")
         
     profile_read = MillProfileRead.from_orm(profile)
-    profile_read.full_name = current_user.full_name
+    profile_read.full_name = safe_display_name(current_user)
     return profile_read
 
 @router.post("/manufacturer/profile", response_model=MillProfileRead)
@@ -68,7 +75,7 @@ async def create_or_update_mill_profile(
     await session.refresh(db_profile)
     
     profile_read = MillProfileRead.from_orm(db_profile)
-    profile_read.full_name = current_user.full_name
+    profile_read.full_name = safe_display_name(current_user)
     return profile_read
 
 # --- Shop Profile Endpoints ---
@@ -89,7 +96,7 @@ async def get_shop_profile(
         raise HTTPException(status_code=404, detail="Shop profile not found")
         
     profile_read = ShopProfileRead.from_orm(profile)
-    profile_read.full_name = current_user.full_name
+    profile_read.full_name = safe_display_name(current_user)
     return profile_read
 
 @router.post("/shop/profile", response_model=ShopProfileRead)
@@ -124,7 +131,7 @@ async def create_or_update_shop_profile(
     await session.refresh(db_profile)
     
     profile_read = ShopProfileRead.from_orm(db_profile)
-    profile_read.full_name = current_user.full_name
+    profile_read.full_name = safe_display_name(current_user)
     return profile_read
 
 # --- Customer Profile Endpoints ---
@@ -145,7 +152,7 @@ async def get_customer_profile(
         raise HTTPException(status_code=404, detail="Customer profile not found")
         
     profile_read = CustomerProfileRead.from_orm(profile)
-    profile_read.full_name = current_user.full_name
+    profile_read.full_name = safe_display_name(current_user)
     return profile_read
 
 @router.post("/customer/profile", response_model=CustomerProfileRead)
@@ -180,5 +187,5 @@ async def create_or_update_customer_profile(
     await session.refresh(db_profile)
     
     profile_read = CustomerProfileRead.from_orm(db_profile)
-    profile_read.full_name = current_user.full_name
+    profile_read.full_name = safe_display_name(current_user)
     return profile_read

@@ -23,7 +23,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401 && typeof window !== 'undefined') {
+        const requestUrl = String(error.config?.url || '');
+        const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/forgot-password') || requestUrl.includes('/auth/verify-otp') || requestUrl.includes('/auth/reset-password');
+        if (error.response?.status === 401 && typeof window !== 'undefined' && !isAuthRequest) {
             // Token expired or invalid
             console.warn("Authentication error, redirecting to login");
             localStorage.removeItem('token');
@@ -96,6 +98,25 @@ export interface CropHarvest {
     buyer_type?: string;
     sold_to?: string;
     notes?: string;
+    status?: string;
+}
+
+export interface CropSale {
+    id: number;
+    crop_id: number;
+    date: string;
+    buyer_type: string;
+    buyer_name: string;
+    buyer_id?: string;
+    quantity_quintals: number;
+    total_bags: number;
+    bag_size: number;
+    price_per_quintal: number;
+    total_revenue: number;
+    payment_mode: string;
+    notes?: string;
+    status: string;
+    harvest_ids?: number[];
 }
 
 export const getCropExpenses = async (cropId: number) => {
@@ -142,6 +163,21 @@ export const updateCropHarvest = async (harvestId: number, harvest: Partial<Crop
 
 export const deleteCropHarvest = async (harvestId: number) => {
     const response = await api.delete(`/farmer/crops/harvests/${harvestId}`);
+    return response.data;
+};
+
+export const getCropSales = async (cropId: number) => {
+    const response = await api.get<CropSale[]>(`/farmer/crops/${cropId}/sales`);
+    return response.data;
+};
+
+export const createCropSale = async (cropId: number, sale: Partial<CropSale>) => {
+    const response = await api.post<CropSale>(`/farmer/crops/${cropId}/sales`, sale);
+    return response.data;
+};
+
+export const deleteCropSale = async (saleId: number) => {
+    const response = await api.delete(`/farmer/crops/sales/${saleId}`);
     return response.data;
 };
 

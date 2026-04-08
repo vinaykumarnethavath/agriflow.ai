@@ -17,17 +17,17 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSe
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # Note: using 'jwt' from 'jose' or 'pyjwt' - assuming 'pyjwt' based on utils.py
-        # If utils.py used 'jwt' (pyjwt), we use that.
-        # Check utils.py: "import jwt" -> standard pyjwt.
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        subject: str = payload.get("sub")
+        role: str = payload.get("role")
+        if subject is None:
             raise credentials_exception
-    except Exception: # PyJWT raises distinct exceptions but catch-all for now
+    except Exception:
         raise credentials_exception
-        
-    statement = select(User).where(User.email == email)
+
+    statement = select(User).where((User.email == subject) | (User.phone_number == subject))
+    if role is not None:
+        statement = statement.where(User.role == role)
     result = await session.exec(statement)
     user = result.first()
     if user is None:

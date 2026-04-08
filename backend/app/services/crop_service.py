@@ -1,6 +1,6 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
-from app.models import Crop, CropExpense, CropHarvest
+from app.models import Crop, CropExpense, CropHarvest, CropSale
 
 async def recalculate_crop_financials(crop_id: int, session: AsyncSession) -> Crop:
     """
@@ -20,16 +20,21 @@ async def recalculate_crop_financials(crop_id: int, session: AsyncSession) -> Cr
     total_cost = sum(e.total_cost for e in expenses)
     crop.total_cost = total_cost
 
-    # 2. Calculate Total Revenue & Yield from Harvests
+    # 2. Calculate Total Yield from Harvests
     statement_harvests = select(CropHarvest).where(CropHarvest.crop_id == crop_id)
     results_harvests = await session.exec(statement_harvests)
     harvests = results_harvests.all()
     
-    total_revenue = sum(h.total_revenue for h in harvests)
     total_yield = sum(h.quantity for h in harvests)
-    
-    crop.total_revenue = total_revenue
     crop.actual_yield = total_yield
+
+    # 2.5 Calculate Total Revenue from Sales
+    statement_sales = select(CropSale).where(CropSale.crop_id == crop_id)
+    results_sales = await session.exec(statement_sales)
+    sales = results_sales.all()
+
+    total_revenue = sum(s.total_revenue for s in sales)
+    crop.total_revenue = total_revenue
     
     # 3. Calculate Net Profit
     #    Profit = Revenue - Cost
