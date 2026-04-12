@@ -99,6 +99,10 @@ AgriChain AI is a full-stack web application for agriculture supply-chain and fa
 
 - PostgreSQL
 
+## Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+
 ## Future Scope
 
 - **Real-time market + weather intelligence**

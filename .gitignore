@@ -1,6 +1,8 @@
 .env
 backend/.env
 frontend/.env
+backend/.env.local
+frontend/.env.local
 node_modules
 __pycache__
 *.pyc
