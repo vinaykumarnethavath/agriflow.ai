@@ -6,6 +6,7 @@ import {
     AlertCircle, Plus, RotateCcw, History, Trash2, Edit2, Check, ChevronLeft
 } from "lucide-react";
 import { sendChatMessage, ChatResponse } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -29,25 +30,51 @@ type ChatSession = {
 };
 
 // ---------------------------------------------------------------------------
-// Constants
+// Role-Specific Config — Each role gets its own isolated chatbot experience
 // ---------------------------------------------------------------------------
 
-const STORAGE_KEY = "agri_chat_sessions";
-const ACTIVE_SESSION_KEY = "agri_active_session";
+function getStorageKey(role: string) { return `agri_chat_sessions_${role}`; }
+function getActiveSessionKey(role: string) { return `agri_active_session_${role}`; }
 
-const WELCOME_MESSAGE: Message = {
-    id: "welcome-1",
-    text: "Hello! I'm your AgriChain Assistant. I can help with your farm data, inventory, finances, or provide general agricultural advice.",
-    sender: "bot",
-    source: "external",
-    timestamp: new Date(),
+const WELCOME_MESSAGES: Record<string, string> = {
+    farmer: "Hello! I'm your Farm Assistant. I can help with your crops, expenses, harvests, sales, and provide agricultural advice.",
+    shop: "Hello! I'm your Shop Assistant. I can help with your inventory, orders, sales analytics, expenses, and business insights.",
+    manufacturer: "Hello! I'm your Mill Assistant. I can help with your purchases, production batches, sales, and manufacturing operations.",
+    customer: "Hello! I'm your AgriChain Assistant. I can help you find products, track orders, and answer questions about agriculture.",
 };
 
-const QUICK_QUESTIONS = [
-    "What are my total expenses?",
-    "Best fertilizer for wheat?",
-    "What is my bank account?",
-];
+const QUICK_QUESTIONS_BY_ROLE: Record<string, string[]> = {
+    farmer: [
+        "What are my total crop expenses?",
+        "Show my harvest summary",
+        "Best fertilizer for wheat?",
+    ],
+    shop: [
+        "What is my total revenue?",
+        "How many orders are pending?",
+        "Show my inventory summary",
+    ],
+    manufacturer: [
+        "Show my production batches",
+        "What are my total purchases?",
+        "How much have I sold?",
+    ],
+    customer: [
+        "What products are available?",
+        "Track my orders",
+        "Best organic fertilizers?",
+    ],
+};
+
+function getWelcomeMessage(role: string): Message {
+    return {
+        id: "welcome-1",
+        text: WELCOME_MESSAGES[role] || WELCOME_MESSAGES.farmer,
+        sender: "bot",
+        source: "external",
+        timestamp: new Date(),
+    };
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,12 +84,12 @@ function generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-function createNewSession(): ChatSession {
+function createNewSession(role: string = "farmer"): ChatSession {
     const now = new Date().toISOString();
     return {
         id: generateId(),
         title: "New Chat",
-        messages: [{ ...WELCOME_MESSAGE, id: `welcome-${generateId()}`, timestamp: new Date() }],
+        messages: [{ ...getWelcomeMessage(role), id: `welcome-${generateId()}`, timestamp: new Date() }],
         createdAt: now,
         updatedAt: now,
     };
@@ -75,23 +102,23 @@ function deriveTitle(text: string): string {
     return cleaned.slice(0, 28).trim() + "…";
 }
 
-/** Save sessions to localStorage */
-function saveSessions(sessions: ChatSession[], activeId: string) {
+/** Save sessions to role-specific localStorage */
+function saveSessions(sessions: ChatSession[], activeId: string, role: string) {
     try {
         const serialisable = sessions.map(s => ({
             ...s,
             messages: s.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp).toISOString() })),
         }));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(serialisable));
-        localStorage.setItem(ACTIVE_SESSION_KEY, activeId);
+        localStorage.setItem(getStorageKey(role), JSON.stringify(serialisable));
+        localStorage.setItem(getActiveSessionKey(role), activeId);
     } catch { /* storage full – silent fail */ }
 }
 
-/** Load sessions from localStorage */
-function loadSessions(): { sessions: ChatSession[]; activeId: string } {
+/** Load sessions from role-specific localStorage */
+function loadSessions(role: string): { sessions: ChatSession[]; activeId: string } {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const activeId = localStorage.getItem(ACTIVE_SESSION_KEY) || "";
+        const raw = localStorage.getItem(getStorageKey(role));
+        const activeId = localStorage.getItem(getActiveSessionKey(role)) || "";
         if (!raw) return { sessions: [], activeId: "" };
         const parsed: ChatSession[] = JSON.parse(raw).map((s: any) => ({
             ...s,
@@ -108,6 +135,10 @@ function loadSessions(): { sessions: ChatSession[]; activeId: string } {
 // ---------------------------------------------------------------------------
 
 export const ChatBot = () => {
+    // ----- Get current user role for isolation -----
+    const { user } = useAuth();
+    const userRole = (user?.role || "farmer") as string;
+
     // ----- Core state -----
     const [isOpen, setIsOpen] = useState(false);
     const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -124,27 +155,29 @@ export const ChatBot = () => {
     // ----- Derived -----
     const activeSession = sessions.find(s => s.id === activeSessionId);
     const messages = activeSession?.messages ?? [];
+    const quickQuestions = QUICK_QUESTIONS_BY_ROLE[userRole] || QUICK_QUESTIONS_BY_ROLE.farmer;
 
-    // ----- Init: load from localStorage -----
+    // ----- Init: load from ROLE-SPECIFIC localStorage -----
+    // Re-runs when userRole changes (e.g., logging out and in as a different role)
     useEffect(() => {
-        const { sessions: loaded, activeId } = loadSessions();
+        const { sessions: loaded, activeId } = loadSessions(userRole);
         if (loaded.length > 0) {
             setSessions(loaded);
             const target = loaded.find(s => s.id === activeId) ? activeId : loaded[0].id;
             setActiveSessionId(target);
         } else {
-            const first = createNewSession();
+            const first = createNewSession(userRole);
             setSessions([first]);
             setActiveSessionId(first.id);
         }
-    }, []);
+    }, [userRole]);
 
     // ----- Persist whenever sessions / activeSessionId change -----
     useEffect(() => {
         if (sessions.length > 0) {
-            saveSessions(sessions, activeSessionId);
+            saveSessions(sessions, activeSessionId, userRole);
         }
-    }, [sessions, activeSessionId]);
+    }, [sessions, activeSessionId, userRole]);
 
     // ----- Auto-scroll -----
     const scrollToBottom = useCallback(() => {
@@ -163,19 +196,19 @@ export const ChatBot = () => {
     }, [activeSessionId]);
 
     const handleNewChat = useCallback(() => {
-        const newSession = createNewSession();
+        const newSession = createNewSession(userRole);
         setSessions(prev => [newSession, ...prev]);
         setActiveSessionId(newSession.id);
         setInput("");
         setShowSidebar(false);
         setEditingMessageId(null);
-    }, []);
+    }, [userRole]);
 
     const handleDeleteSession = useCallback((sessionId: string) => {
         setSessions(prev => {
             const updated = prev.filter(s => s.id !== sessionId);
             if (updated.length === 0) {
-                const fresh = createNewSession();
+                const fresh = createNewSession(userRole);
                 setActiveSessionId(fresh.id);
                 return [fresh];
             }
@@ -185,18 +218,18 @@ export const ChatBot = () => {
             return updated;
         });
         setDeleteConfirmId(null);
-    }, [activeSessionId]);
+    }, [activeSessionId, userRole]);
 
     const handleRefreshChat = useCallback(() => {
         updateActiveSession(s => ({
             ...s,
             title: "New Chat",
-            messages: [{ ...WELCOME_MESSAGE, id: `welcome-${generateId()}`, timestamp: new Date() }],
+            messages: [{ ...getWelcomeMessage(userRole), id: `welcome-${generateId()}`, timestamp: new Date() }],
             updatedAt: new Date().toISOString(),
         }));
         setInput("");
         setEditingMessageId(null);
-    }, [updateActiveSession]);
+    }, [updateActiveSession, userRole]);
 
     const handleSwitchSession = useCallback((sessionId: string) => {
         setActiveSessionId(sessionId);
@@ -364,12 +397,6 @@ export const ChatBot = () => {
                     <span className="absolute right-16 bg-white dark:bg-slate-800 text-green-900 dark:text-green-100 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                         Ask Agri Assistant
                     </span>
-                    {/* Notification dot if there are saved chats */}
-                    {sessions.length > 1 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
-                            {sessions.length}
-                        </span>
-                    )}
                 </button>
             )}
 
@@ -439,9 +466,6 @@ export const ChatBot = () => {
                                     <History className="w-4 h-4 text-green-600" />
                                     Chat History
                                 </h4>
-                                <span className="text-[10px] bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full font-semibold">
-                                    {sessions.length}
-                                </span>
                             </div>
 
                             {/* Sidebar List */}
@@ -615,7 +639,7 @@ export const ChatBot = () => {
                         {/* Quick Questions (only show if no user messages yet) */}
                         {!hasUserMessages && (
                             <div className="px-3 pb-2 pt-1 flex flex-wrap gap-1.5 justify-center bg-slate-50/50 dark:bg-slate-900 shrink-0">
-                                {QUICK_QUESTIONS.map((q, i) => (
+                                {quickQuestions.map((q, i) => (
                                     <button
                                         key={i}
                                         onClick={() => handleSendMessage(q)}
