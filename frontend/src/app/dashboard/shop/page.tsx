@@ -107,8 +107,15 @@ export default function ShopDashboard() {
             }
         };
         fetchData();
+
+        // Poll every 15 seconds for real-time updates
+        const interval = setInterval(() => {
+            fetchData();
+        }, 15000);
+
+        return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [period]);
 
     const handlePeriodChange = async (p: string) => {
         setPeriod(p);

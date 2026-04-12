@@ -48,13 +48,25 @@ export default function ShopOrdersPage() {
 
     useEffect(() => {
         fetchOrders();
+        
+        // Polling every 10 seconds for real-time order sync
+        const interval = setInterval(() => {
+            console.log("Polling for new orders...");
+            fetchOrders();
+        }, 10000);
+
+        return () => clearInterval(interval);
     }, []);
 
     useEffect(() => {
         if (selectedOrder && !filteredOrders.some((o) => o.id === selectedOrder.id)) {
-            setSelectedOrder(filteredOrders[0] || null);
+            // Keep selected order if it still exists in the list, even if filtered out, 
+            // but we use the latest data from the orders state.
+            const updated = orders.find(o => o.id === selectedOrder.id);
+            if (updated) setSelectedOrder(updated);
+            else setSelectedOrder(filteredOrders[0] || null);
         }
-    }, [filteredOrders, selectedOrder]);
+    }, [filteredOrders, orders, selectedOrder]);
 
     const fetchOrders = async () => {
         try {
@@ -74,9 +86,9 @@ export default function ShopOrdersPage() {
             if (selectedOrder && selectedOrder.id === id) {
                 setSelectedOrder((prev) => prev ? { ...prev, status: newStatus } : null);
             }
-        } catch (error) {
-            console.error("Failed to update status:", error);
-            alert("Failed to update status");
+        } catch (error: any) {
+            const msg = error?.response?.data?.detail || "Failed to update status";
+            alert(msg);
         }
     };
 
@@ -183,6 +195,15 @@ export default function ShopOrdersPage() {
                                                 <div className="text-right">
                                                     <div className="font-bold text-green-700">₹{order.final_amount}</div>
                                                     {getStatusBadge(order.status)}
+                                                    {/* Payment status mini-pill */}
+                                                    {order.payment_status === "paid"
+                                                        ? <span className="text-xs mt-0.5 px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Paid</span>
+                                                        : order.status !== "cancelled"
+                                                            ? <span className="text-xs mt-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                                                                {order.payment_mode === "cash" ? "Cash Pending" : "Unpaid"}
+                                                              </span>
+                                                            : null
+                                                    }
                                                     {order.status === "completed" && order.profit !== undefined && (
                                                         <div className={`text-xs mt-0.5 font-semibold ${order.profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                                                             {order.profit >= 0 ? "+" : ""}₹{order.profit.toFixed(0)} profit
@@ -213,6 +234,7 @@ export default function ShopOrdersPage() {
                                             </p>
                                         </div>
                                         <div className="flex gap-2 flex-wrap">
+                                            {/* PENDING: Show Decline + Confirm */}
                                             {selectedOrder.status === "pending" && (
                                                 <>
                                                     <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, "cancelled")} className="bg-red-600 hover:bg-red-700">
@@ -223,18 +245,41 @@ export default function ShopOrdersPage() {
                                                     </Button>
                                                 </>
                                             )}
-                                            {(selectedOrder.status === "confirmed" || selectedOrder.status === "pending") && (
+
+                                            {/* CASH ORDERS: Show "Receive Payment" button if not paid yet */}
+                                            {selectedOrder.payment_mode === "cash" && selectedOrder.payment_status !== "paid" && selectedOrder.status !== "cancelled" && (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await updateOrderStatus(selectedOrder.id, { payment_status: "paid" });
+                                                            await fetchOrders();
+                                                        } catch (e: any) {
+                                                            alert("Failed to mark payment");
+                                                        }
+                                                    }}
+                                                    className="bg-emerald-600 hover:bg-emerald-700"
+                                                >
+                                                    <Wallet className="w-4 h-4 mr-1" /> Receive Payment
+                                                </Button>
+                                            )}
+
+                                            {/* DISPATCH: Only if confirmed AND payment received */}
+                                            {(selectedOrder.status === "confirmed") && (
                                                 <Button
                                                     size="sm"
                                                     onClick={() => handleStatusUpdate(selectedOrder.id, "dispatched")}
-                                                    className="bg-blue-600"
-                                                    disabled={selectedOrder.payment_mode === "razorpay" && selectedOrder.payment_status !== "paid"}
+                                                    className="bg-blue-600 hover:bg-blue-700"
+                                                    disabled={selectedOrder.payment_status !== "paid"}
+                                                    title={selectedOrder.payment_status !== "paid" ? "Receive payment first before dispatching" : "Dispatch this order"}
                                                 >
                                                     <Truck className="w-4 h-4 mr-1" /> Dispatch
                                                 </Button>
                                             )}
+
+                                            {/* COMPLETE: Only after dispatched */}
                                             {selectedOrder.status === "dispatched" && (
-                                                <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, "completed")} className="bg-green-600">
+                                                <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, "completed")} className="bg-green-600 hover:bg-green-700">
                                                     <CheckCircle className="w-4 h-4 mr-1" /> Complete
                                                 </Button>
                                             )}
@@ -243,6 +288,43 @@ export default function ShopOrdersPage() {
                                 </CardHeader>
 
                                 <CardContent className="p-6 space-y-6">
+                                    {/* Payment Status Banner */}
+                                    {selectedOrder.status !== "cancelled" && (
+                                        <div className={`flex items-center justify-between rounded-xl px-4 py-3 border ${
+                                            selectedOrder.payment_status === "paid"
+                                                ? "bg-green-50 border-green-200"
+                                                : selectedOrder.payment_mode === "cash"
+                                                    ? "bg-amber-50 border-amber-300"
+                                                    : "bg-red-50 border-red-200"
+                                        }`}>
+                                            <div className="flex items-center gap-2">
+                                                {selectedOrder.payment_status === "paid" ? (
+                                                    <><CheckCircle className="w-4 h-4 text-green-600" />
+                                                    <span className="text-sm font-medium text-green-800">
+                                                        Payment received — ready to dispatch
+                                                    </span></>
+                                                ) : selectedOrder.payment_mode === "cash" ? (
+                                                    <><Wallet className="w-4 h-4 text-amber-600" />
+                                                    <span className="text-sm font-medium text-amber-800">
+                                                        Cash payment pending — collect ₹{selectedOrder.final_amount} before dispatch
+                                                    </span></>
+                                                ) : (
+                                                    <><CreditCard className="w-4 h-4 text-red-500" />
+                                                    <span className="text-sm font-medium text-red-800">
+                                                        Online payment not yet confirmed — dispatch blocked
+                                                    </span></>
+                                                )}
+                                            </div>
+                                            <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                                                selectedOrder.payment_status === "paid"
+                                                    ? "bg-green-200 text-green-800"
+                                                    : "bg-amber-200 text-amber-800"
+                                            }`}>
+                                                {selectedOrder.payment_mode?.toUpperCase()} · {selectedOrder.payment_status === "paid" ? "PAID" : "PENDING"}
+                                            </span>
+                                        </div>
+                                    )}
+
                                     {/* Items Table */}
                                     <div>
                                         <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm text-gray-700">

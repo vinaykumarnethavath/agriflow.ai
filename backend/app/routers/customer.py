@@ -8,7 +8,8 @@ from ..database import get_session
 from ..models import (
     User, Product, 
     Cart, CartItemCreate, CartItemRead,
-    CustomerOrder, CustomerOrderCreate, CustomerOrderRead, CustomerOrderItem, CustomerOrderItemRead
+    CustomerOrder, CustomerOrderCreate, CustomerOrderRead, CustomerOrderItem, CustomerOrderItemRead,
+    ShopOrder, ShopOrderItem
 )
 from ..deps import get_current_user
 
@@ -162,10 +163,48 @@ async def checkout(
     await session.commit()
     await session.refresh(order)
     
-    # 4. Save Order Items & Clear Cart
+    # 4. Save Order Items, Create Shop Orders & Clear Cart
+    shop_orders_data = {}
+    
     for item in order_items:
         item.order_id = order.id
         session.add(item)
+        
+        if item.seller_id not in shop_orders_data:
+            shop_orders_data[item.seller_id] = {
+                "total_amount": 0.0,
+                "items": []
+            }
+        
+        subtotal = item.price * item.quantity
+        shop_orders_data[item.seller_id]["total_amount"] += subtotal
+        shop_orders_data[item.seller_id]["items"].append(item)
+    
+    # Create corresponding Shop Orders for analytics
+    for seller_id, data in shop_orders_data.items():
+        shop_order = ShopOrder(
+            shop_id=seller_id,
+            farmer_id=current_user.id,
+            farmer_name=current_user.full_name,
+            total_amount=data["total_amount"],
+            discount=0.0,
+            final_amount=data["total_amount"],
+            payment_mode="online",
+            status="pending"
+        )
+        session.add(shop_order)
+        await session.flush()
+        
+        for item in data["items"]:
+            shop_order_item = ShopOrderItem(
+                order_id=shop_order.id,
+                product_id=item.product_id,
+                product_name=item.product_name,
+                quantity=item.quantity,
+                unit_price=item.price,
+                subtotal=item.price * item.quantity
+            )
+            session.add(shop_order_item)
     
     for cart_item in cart_items:
         await session.delete(cart_item)

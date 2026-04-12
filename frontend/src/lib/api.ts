@@ -297,6 +297,7 @@ export interface ShopOrder {
 
 export interface ShopOrderStatusUpdate {
     status?: string;
+    payment_status?: string;
     discount?: number;
     expense_transportation?: number;
     expense_labour?: number;
@@ -335,6 +336,7 @@ export interface CategoryRevenue {
   category: string;
   revenue: number;
   qty_sold: number;
+  profit: number;
 }
 
 export const getCategoryRevenue = async (period?: string) => {

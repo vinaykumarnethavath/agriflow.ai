@@ -192,8 +192,12 @@ async def read_shop_orders_detailed(
             if prod_dict.get(item.product_id) else 0
             for item in order.items
         )
-        total_expenses = order.total_expenses or 0.0
-        profit = order.final_amount - total_cost - total_expenses
+        transport = expense.transportation if expense and expense.transportation is not None else 0.0
+        labour = expense.labour if expense and expense.labour is not None else 0.0
+        other = expense.other if expense and expense.other is not None else 0.0
+        total_expenses = transport + labour + other
+        
+        profit = (order.final_amount or 0.0) - total_cost - total_expenses
 
         detailed.append({
             "id": order.id,
@@ -201,7 +205,7 @@ async def read_shop_orders_detailed(
             "farmer_id": order.farmer_id,
             "farmer_name": order.farmer_name,
             "total_amount": order.total_amount,
-            "discount": order.discount,
+            "discount": order.discount or 0.0,
             "final_amount": order.final_amount,
             "payment_mode": order.payment_mode,
             "payment_status": order.payment_status,
@@ -212,11 +216,11 @@ async def read_shop_orders_detailed(
             "total_expenses": total_expenses,
             "profit": profit,
             "expense": {
-                "transportation": expense.transportation if expense else 0.0,
-                "labour": expense.labour if expense else 0.0,
-                "other": expense.other if expense else 0.0,
+                "transportation": transport,
+                "labour": labour,
+                "other": other,
                 "notes": expense.notes if expense else None,
-                "total": (expense.transportation + expense.labour + expense.other) if expense else 0.0,
+                "total": transport + labour + other,
             },
             "items": [
                 {
@@ -269,6 +273,13 @@ async def update_order_status(
         if update_data.status not in valid_statuses:
             raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
 
+        # DISPATCH VALIDATION: payment must be received before dispatching
+        if update_data.status == "dispatched" and order.payment_status != "paid":
+            raise HTTPException(
+                status_code=400, 
+                detail="Cannot dispatch order without receiving payment first. Please mark payment as received."
+            )
+
         # QUANTITY RESTORATION LOGIC
         if update_data.status == "cancelled" and order.status != "cancelled":
             for item in order.items:
@@ -286,6 +297,11 @@ async def update_order_status(
                     session.add(product)
 
         order.status = update_data.status
+
+    # Update payment_status if provided (shop owner marking cash as received)
+    if current_user.role == "shop" and update_data.payment_status is not None:
+        if update_data.payment_status in ["paid", "pending"]:
+            order.payment_status = update_data.payment_status
 
     # Update Discount if provided (shop owner giving discount during confirm)
     if current_user.role == "shop" and update_data.discount is not None:

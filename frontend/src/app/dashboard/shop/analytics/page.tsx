@@ -14,11 +14,15 @@ import {
     getCategoryRevenue,
     getTopProducts,
     getMyProducts,
+    getChannelBreakdown,
+    getOrderHealth,
     RevenueReport,
     ShopAnalytics,
     CategoryRevenue,
     TopProduct,
     Product,
+    ChannelBreakdown,
+    OrderHealthMetric,
 } from "@/lib/api";
 import {
     LineChart as ReChartsLine,
@@ -51,6 +55,8 @@ export default function ShopAnalyticsPage() {
     const [categoryData, setCategoryData] = useState<CategoryRevenue[]>([]);
     const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
     const [myProducts, setMyProducts] = useState<Product[]>([]);
+    const [channelData, setChannelData] = useState<ChannelBreakdown[]>([]);
+    const [orderHealthData, setOrderHealthData] = useState<OrderHealthMetric[]>([]);
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState("7d");
     const [chartLoading, setChartLoading] = useState(false);
@@ -58,13 +64,15 @@ export default function ShopAnalyticsPage() {
     const fetchAll = async (p: string) => {
         setChartLoading(true);
         try {
-            const [rev, ov, trend, cats, top, prods] = await Promise.all([
+            const [rev, ov, trend, cats, top, prods, channels, health] = await Promise.all([
                 getShopRevenue(p).catch(() => null),
                 getShopAnalytics().catch(() => null),
                 getSalesTrend(p).catch(() => []),
                 getCategoryRevenue(p).catch(() => []),
                 getTopProducts(p).catch(() => []),
                 getMyProducts().catch(() => []),
+                getChannelBreakdown(p).catch(() => []),
+                getOrderHealth(p).catch(() => []),
             ]);
             setRevenue(rev);
             setOverview(ov);
@@ -72,6 +80,8 @@ export default function ShopAnalyticsPage() {
             setCategoryData(cats);
             setTopProducts(top);
             setMyProducts(prods as Product[]);
+            setChannelData(channels);
+            setOrderHealthData(health);
         } catch (e) {
             console.error(e);
         } finally {
@@ -82,11 +92,18 @@ export default function ShopAnalyticsPage() {
 
     useEffect(() => {
         fetchAll(period);
-    }, []);
+        
+        // Add polling for real-time updates (every 10 seconds)
+        const interval = setInterval(() => {
+            console.log("Polling for fresh analytics data...");
+            fetchAll(period);
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, [period]);
 
     const handlePeriodChange = (p: string) => {
         setPeriod(p);
-        fetchAll(p);
     };
 
     // Build product map for overhead lookup by product_id
@@ -98,8 +115,8 @@ export default function ShopAnalyticsPage() {
 
     // Category revenue totals
     const catMap = useMemo(() => {
-        const m: Record<string, { revenue: number; qty: number }> = {};
-        categoryData.forEach(c => { m[c.category] = { revenue: c.revenue, qty: c.qty_sold }; });
+        const m: Record<string, { revenue: number; qty: number; profit: number }> = {};
+        categoryData.forEach(c => { m[c.category] = { revenue: c.revenue, qty: c.qty_sold, profit: c.profit }; });
         return m;
     }, [categoryData]);
 
@@ -169,15 +186,6 @@ export default function ShopAnalyticsPage() {
                         <h3 className="text-2xl font-bold text-gray-900">₹{(revenue?.total_cost ?? 0).toLocaleString()}</h3>
                     </CardContent>
                 </Card>
-                <Card className="hover:shadow-md transition-shadow border-amber-100">
-                    <CardContent className="p-5">
-                        <div className="flex items-center justify-between mb-3">
-                            <p className="text-sm font-medium text-muted-foreground">Shop Expenses</p>
-                            <div className="bg-amber-100 p-2 rounded-lg"><Receipt className="h-5 w-5 text-amber-600" /></div>
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-900">₹{(revenue?.total_expenses ?? 0).toLocaleString()}</h3>
-                    </CardContent>
-                </Card>
                 <Card className={`hover:shadow-md transition-shadow ${(revenue?.profit ?? 0) >= 0 ? "border-emerald-200 bg-emerald-50/30" : "border-red-200 bg-red-50/30"}`}>
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between mb-3">
@@ -194,41 +202,17 @@ export default function ShopAnalyticsPage() {
                         </p>
                     </CardContent>
                 </Card>
-            </div>
-
-            {/* ── Order KPI Row ── (replaces Picture 1) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="border-blue-100 hover:shadow-md transition-shadow">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="bg-blue-100 p-3 rounded-xl"><ShoppingCart className="h-6 w-6 text-blue-600" /></div>
-                        <div>
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Total Orders</p>
-                            <p className="text-3xl font-bold text-slate-800">{revenue?.total_orders ?? 0}</p>
-                            <div className="flex gap-3 mt-1 text-[11px]">
-                                <span className="text-emerald-600 font-medium">✓ {revenue?.completed_orders ?? 0} done</span>
-                                <span className="text-amber-500 font-medium">⏳ {revenue?.pending_orders ?? 0} pending</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="border-purple-100 hover:shadow-md transition-shadow">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="bg-purple-100 p-3 rounded-xl"><Package className="h-6 w-6 text-purple-600" /></div>
-                        <div>
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Products Sold</p>
-                            <p className="text-3xl font-bold text-slate-800">{totalUnitsSold.toLocaleString()}</p>
-                            <p className="text-[11px] text-slate-500 mt-1">{topProducts.length} unique products</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="border-teal-100 hover:shadow-md transition-shadow">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="bg-teal-100 p-3 rounded-xl"><PiggyBank className="h-6 w-6 text-teal-600" /></div>
-                        <div>
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Sales Insights</p>
-                            <p className="text-3xl font-bold text-slate-800">₹{(revenue?.avg_ticket ?? 0).toLocaleString()}</p>
-                            <p className="text-[11px] text-slate-500 mt-1">Avg order value</p>
-                        </div>
+                <Card className="hover:shadow-md transition-shadow border-purple-100">
+                    <CardContent className="p-5">
+                         <div className="flex items-center justify-between mb-3">
+                             <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                             <div className="bg-purple-100 p-2 rounded-lg"><ShoppingCart className="h-5 w-5 text-purple-600" /></div>
+                         </div>
+                         <h3 className="text-2xl font-bold text-gray-900">{revenue?.total_orders ?? 0}</h3>
+                         <div className="flex gap-3 mt-1 text-[11px] text-muted-foreground font-medium">
+                             <span className="text-emerald-600">✓ {revenue?.completed_orders ?? 0} done</span>
+                             <span className="text-amber-500">⏳ {revenue?.pending_orders ?? 0} pending</span>
+                         </div>
                     </CardContent>
                 </Card>
             </div>
@@ -238,7 +222,7 @@ export default function ShopAnalyticsPage() {
                 <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Sales by Category</h2>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {CATEGORIES.map(({ key, label, icon: Icon, color, iconColor, badgeColor }) => {
-                        const cat = catMap[key] || { revenue: 0, qty: 0 };
+                        const cat = catMap[key] || { revenue: 0, qty: 0, profit: 0 };
                         return (
                             <Card key={key} className={`hover:shadow-md transition-shadow ${color}`}>
                                 <CardContent className="p-4">
@@ -247,7 +231,12 @@ export default function ShopAnalyticsPage() {
                                         <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${badgeColor}`}>{label}</span>
                                     </div>
                                     <p className="text-xl font-bold text-gray-900">₹{cat.revenue.toLocaleString()}</p>
-                                    <p className="text-xs text-gray-500 mt-1">{cat.qty} units sold</p>
+                                    <div className="flex justify-between items-center mt-1">
+                                        <p className="text-[11px] text-gray-500">{cat.qty} sold</p>
+                                        <p className={`text-[11px] font-bold ${cat.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                                            Profit: ₹{cat.profit.toLocaleString()}
+                                        </p>
+                                    </div>
                                 </CardContent>
                             </Card>
                         );
@@ -303,7 +292,6 @@ export default function ShopAnalyticsPage() {
                                 {[
                                     { label: "Total Revenue", value: revenue.total_revenue, color: "bg-green-500", cls: "text-green-700" },
                                     { label: "Product Cost", value: revenue.total_cost, color: "bg-blue-500", cls: "text-blue-700" },
-                                    { label: "Shop Expenses", value: revenue.total_expenses, color: "bg-amber-500", cls: "text-amber-700" },
                                     { label: "Net Profit", value: revenue.profit, color: revenue.profit >= 0 ? "bg-emerald-600" : "bg-red-500", cls: revenue.profit >= 0 ? "text-emerald-700 font-bold" : "text-red-700 font-bold" },
                                 ].map((row) => (
                                     <div key={row.label} className="flex items-center gap-4">
@@ -325,6 +313,69 @@ export default function ShopAnalyticsPage() {
                 )}
             </div>
 
+            {/* ── Channel and Health Cards ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Channel Breakdown */}
+                <Card>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold">Channel Breakdown</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {channelData.length === 0 ? (
+                            <p className="text-sm text-gray-500">No channel data available.</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {channelData.map(ch => (
+                                    <div key={ch.channel} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
+                                        <div>
+                                            <p className="text-sm font-semibold capitalize bg-opacity-10 text-slate-700">{ch.channel || 'Cash'}</p>
+                                            <p className="text-xs text-gray-500">{ch.orders} orders</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-bold text-gray-900">₹{ch.revenue.toLocaleString()}</p>
+                                            <p className="text-[10px] text-gray-400">Avg: ₹{ch.average_order_value.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Order Health */}
+                <Card>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold">Order Health</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {orderHealthData.length === 0 ? (
+                            <p className="text-sm text-gray-500">No order health data available.</p>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-4">
+                                {orderHealthData.map(h => {
+                                    const colors: Record<string, string> = {
+                                        "completed": "text-emerald-700 bg-emerald-50",
+                                        "dispatched": "text-blue-700 bg-blue-50",
+                                        "pending": "text-amber-700 bg-amber-50",
+                                        "cancelled": "text-red-700 bg-red-50"
+                                    };
+                                    const colorCls = colors[h.status.toLowerCase()] || "text-slate-700 bg-slate-50";
+                                    return (
+                                        <div key={h.status} className={`p-4 rounded-xl flex flex-col justify-between ${colorCls} border border-opacity-50`}>
+                                            <p className="text-xs uppercase font-semibold opacity-70 mb-2">{h.status}</p>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-2xl font-bold">{h.count}</span>
+                                                <span className="text-xs font-semibold opacity-80">{h.percentage}%</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+
             {/* ── Sold Products Detail Table ── */}
             <Card>
                 <CardHeader className="pb-3">
@@ -343,13 +394,12 @@ export default function ShopAnalyticsPage() {
                                     <th className="px-6 py-3 border-b border-gray-200">Cost / Unit</th>
                                     <th className="px-6 py-3 border-b border-gray-200">Revenue</th>
                                     <th className="px-6 py-3 border-b border-gray-200">Profit</th>
-                                    <th className="px-6 py-3 border-b border-gray-200 text-right">Remaining</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
                                 {topProducts.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-10 text-center text-gray-400 text-sm">No product sales recorded for this period.</td>
+                                        <td colSpan={6} className="px-6 py-10 text-center text-gray-400 text-sm">No product sales recorded for this period.</td>
                                     </tr>
                                 ) : (
                                     topProducts.map((product, idx) => {
@@ -408,25 +458,6 @@ export default function ShopAnalyticsPage() {
                                                         <div className={`text-[10px] font-medium ${product.profit >= 0 ? "text-emerald-500" : "text-red-400"}`}>
                                                             {((product.profit / product.revenue) * 100).toFixed(1)}% margin
                                                         </div>
-                                                    )}
-                                                </td>
-                                                {/* Remaining */}
-                                                <td className="px-6 py-3 text-right">
-                                                    {product.remaining_qty !== undefined ? (
-                                                        <div>
-                                                            <span className={`font-bold ${product.remaining_qty <= 5 ? 'text-red-500' : 'text-slate-600'}`}>
-                                                                {product.remaining_qty}
-                                                            </span>
-                                                            <span className="text-xs text-slate-400 ml-1">left</span>
-                                                            {product.remaining_qty <= 5 && product.remaining_qty > 0 && (
-                                                                <div className="text-[10px] text-red-400 font-medium">Low stock</div>
-                                                            )}
-                                                            {product.remaining_qty === 0 && (
-                                                                <div className="text-[10px] text-red-500 font-bold">Out of stock</div>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-slate-300">—</span>
                                                     )}
                                                 </td>
                                             </tr>

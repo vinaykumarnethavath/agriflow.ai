@@ -70,17 +70,21 @@ async def get_shop_overview(
     stock_query = select(func.sum(Product.quantity)).where(Product.user_id == current_user.id)
     total_stock = (await session.exec(stock_query)).first() or 0
 
+    SOLD_STATUSES = ["dispatched", "completed"]
+
     # 3. Today's Sales
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    sales_query = select(func.sum(ShopOrder.total_amount))\
+    sales_query = select(func.sum(ShopOrder.final_amount))\
         .where(ShopOrder.shop_id == current_user.id)\
+        .where(ShopOrder.status.in_(SOLD_STATUSES))\
         .where(ShopOrder.created_at >= today_start)
     today_sales = (await session.exec(sales_query)).first() or 0.0
 
     # 4. Monthly Revenue
     month_start = today_start.replace(day=1)
-    revenue_query = select(func.sum(ShopOrder.total_amount))\
+    revenue_query = select(func.sum(ShopOrder.final_amount))\
         .where(ShopOrder.shop_id == current_user.id)\
+        .where(ShopOrder.status.in_(SOLD_STATUSES))\
         .where(ShopOrder.created_at >= month_start)
     month_revenue = (await session.exec(revenue_query)).first() or 0.0
 
@@ -106,7 +110,6 @@ async def get_shop_overview(
     }
 
 @router.get("/shop/sales-trend")
-@router.get("/shop/sales-trend")
 async def get_sales_trend(
     period: str = Query("7d", description="7d|30d|90d|1y"),
     current_user: User = Depends(get_current_user),
@@ -119,10 +122,12 @@ async def get_sales_trend(
     period_map = {"7d": 7, "30d": 30, "90d": 90, "1y": 365}
     days = period_map.get(period, 7)
         
+    SOLD_STATUSES = ["dispatched", "completed"]
     start_date = datetime.utcnow() - timedelta(days=days)
     
-    query = select(ShopOrder.created_at, ShopOrder.total_amount)\
+    query = select(ShopOrder.created_at, ShopOrder.final_amount)\
         .where(ShopOrder.shop_id == current_user.id)\
+        .where(ShopOrder.status.in_(SOLD_STATUSES))\
         .where(ShopOrder.created_at >= start_date)\
         .order_by(ShopOrder.created_at)
         
@@ -158,7 +163,7 @@ async def get_category_distribution(
     results = await session.exec(query)
     return [{"category": row[0], "stock": row[1]} for row in results.all()]
 
-@router.get("/customers")
+@router.get("/shop/customers")
 async def get_shop_customers(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
@@ -175,6 +180,8 @@ async def get_shop_customers(
     # Since User model is simple, we might just get ID and Name (if we join)
     # For now, let's group by farmer_id and sum total_amount
     
+    SOLD_STATUSES = ["dispatched", "completed"]
+
     query = select(
             ShopOrder.farmer_id, 
             func.count(ShopOrder.id).label("order_count"), 
@@ -183,8 +190,9 @@ async def get_shop_customers(
         )\
         .where(ShopOrder.shop_id == current_user.id)\
         .where(ShopOrder.farmer_id != None)\
+        .where(ShopOrder.status.in_(SOLD_STATUSES))\
         .group_by(ShopOrder.farmer_id)\
-        .order_by(col("total_spent").desc())
+        .order_by(func.sum(ShopOrder.final_amount).desc())
         
     results = await session.exec(query)
     customers = []
@@ -269,76 +277,93 @@ async def get_shop_revenue(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     shop_id = current_user.id
+    SOLD_STATUSES = ["dispatched", "completed"]
 
-    # Date range filter
+    # Date range filters — separate for orders (datetime) and expenses (date)
     now = datetime.utcnow()
     today = now.date()
-    date_filter = True  # Default: no filter
-    if period == "today":
-        start = datetime.combine(today, datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "7d":
-        start = datetime.combine(today - timedelta(days=7), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "30d":
-        start = datetime.combine(today - timedelta(days=30), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "90d":
-        start = datetime.combine(today - timedelta(days=90), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "1y":
-        start = datetime.combine(today - timedelta(days=365), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
+    order_date_filter = True   # for ShopOrder.created_at
+    expense_date_filter = True  # for ShopAccountingExpense.expense_date
+    period_map = {"today": 0, "7d": 7, "30d": 30, "90d": 90, "1y": 365}
+    if period in period_map:
+        days_back = period_map[period]
+        start_date = today - timedelta(days=days_back)
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        order_date_filter = ShopOrder.created_at >= start_dt
+        expense_date_filter = ShopAccountingExpense.expense_date >= start_date
 
-    # 1. Total Revenue (all completed orders)
+    # 1. Total Revenue (completed + dispatched orders)
     rev_query = select(func.coalesce(func.sum(ShopOrder.final_amount), 0.0)).where(
         ShopOrder.shop_id == shop_id,
-        ShopOrder.status == "completed",
-        date_filter
+        ShopOrder.status.in_(SOLD_STATUSES),
+        order_date_filter
     )
     total_revenue = (await session.exec(rev_query)).first() or 0.0
 
-    # 2. Total Business Expenses (from shop_accounting_expenses table, EXCLUDING batch overheads to avoid double-counting)
+    # 2. Total Business Expenses (from shop_accounting_expenses, EXCLUDING batch cost categories
+    #    which are already captured in cost_price and apportioned overheads)
+    BATCH_COST_CATEGORIES = [
+        "batch_transport", "batch_labour", "batch_other",
+        "batch_purchase", "batch_activation"
+    ]
     exp_query = select(func.coalesce(func.sum(ShopAccountingExpense.amount), 0.0)).where(
         ShopAccountingExpense.shop_id == shop_id,
-        ShopAccountingExpense.category.notin_(["batch_transport", "batch_labour", "batch_other"]),
-        date_filter
+        ShopAccountingExpense.category.notin_(BATCH_COST_CATEGORIES),
+        expense_date_filter
     )
     total_expenses = (await session.exec(exp_query)).first() or 0.0
 
-    # 3. Total cost (Landed cost = cost_price + apportioned overheads) for completed orders
+    # 3. Total cost (Landed cost = cost_price + apportioned overheads) for sold orders
     cost_query = select(
-        func.coalesce(func.sum(ShopOrderItem.quantity * (
-            func.coalesce(Product.cost_price, 0.0) + 
-            func.coalesce(Product.apportioned_transport, 0.0) +
-            func.coalesce(Product.apportioned_labour, 0.0) +
-            func.coalesce(Product.apportioned_other, 0.0)
-        )), 0.0)
-    ).join(ShopOrder, ShopOrder.id == ShopOrderItem.order_id).join(
-        Product, Product.id == ShopOrderItem.product_id
-    ).where(
+        ShopOrderItem.product_id,
+        func.coalesce(func.sum(ShopOrderItem.quantity), 0)
+    ).join(ShopOrder, ShopOrder.id == ShopOrderItem.order_id).where(
         ShopOrder.shop_id == shop_id,
-        ShopOrder.status == "completed",
-        Product.cost_price != None,
-        date_filter
-    )
-    total_cost = (await session.exec(cost_query)).first() or 0.0
+        ShopOrder.status.in_(SOLD_STATUSES),
+        order_date_filter
+    ).group_by(ShopOrderItem.product_id)
+
+    sold_items = (await session.exec(cost_query)).all()
+
+    total_cost = 0.0
+    for pid, qty_sold in sold_items:
+        prod = await session.get(Product, pid)
+        if prod:
+            base_cost = (prod.cost_price or 0.0) * qty_sold
+            total_overhead = (prod.apportioned_transport or 0) + (prod.apportioned_labour or 0) + (prod.apportioned_other or 0)
+            
+            lifetime_q = select(func.coalesce(func.sum(ShopOrderItem.quantity), 0)).where(ShopOrderItem.product_id == pid)
+            lifetime_sold = (await session.exec(lifetime_q)).first() or 0
+            original_batch_qty = (prod.quantity or 0) + lifetime_sold
+            
+            overhead = 0.0
+            if original_batch_qty > 0:
+                overhead = total_overhead * (qty_sold / original_batch_qty)
+                
+            total_cost += base_cost + overhead
 
     profit = total_revenue - total_cost - total_expenses
 
     # 4. Stats for quick cards
-    total_orders_q = select(func.count(ShopOrder.id)).where(ShopOrder.shop_id == shop_id)
+    total_orders_q = select(func.count(ShopOrder.id)).where(
+        ShopOrder.shop_id == shop_id, order_date_filter
+    )
     total_orders = (await session.exec(total_orders_q)).first() or 0
 
-    completed_orders_q = select(func.count(ShopOrder.id)).where(
-        ShopOrder.shop_id == shop_id, ShopOrder.status == "completed"
+    sold_orders_q = select(func.count(ShopOrder.id)).where(
+        ShopOrder.shop_id == shop_id, ShopOrder.status.in_(SOLD_STATUSES), order_date_filter
     )
-    completed_orders = (await session.exec(completed_orders_q)).first() or 0
+    sold_orders = (await session.exec(sold_orders_q)).first() or 0
 
-    avg_ticket = (total_revenue / completed_orders) if completed_orders > 0 else 0.0
+    avg_ticket = (total_revenue / sold_orders) if sold_orders > 0 else 0.0
+
+    completed_q = select(func.count(ShopOrder.id)).where(
+        ShopOrder.shop_id == shop_id, ShopOrder.status == "completed", order_date_filter
+    )
+    completed_orders = (await session.exec(completed_q)).first() or 0
 
     pending_q = select(func.count(ShopOrder.id)).where(
-        ShopOrder.shop_id == shop_id, ShopOrder.status == "pending"
+        ShopOrder.shop_id == shop_id, ShopOrder.status == "pending", order_date_filter
     )
     pending_orders = (await session.exec(pending_q)).first() or 0
 
@@ -360,44 +385,85 @@ async def get_category_revenue(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    """Returns revenue breakdown by product category for the shop."""
+    """Returns net revenue and profit breakdown by product category for the shop."""
     if current_user.role != "shop":
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    # Date range filter
+    shop_id = current_user.id
+    SOLD_STATUSES = ["dispatched", "completed"]
+
+    # Date range filters
     now = datetime.utcnow()
     today = now.date()
-    date_filter = True
-    if period == "today":
-        start = datetime.combine(today, datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "7d":
-        start = datetime.combine(today - timedelta(days=7), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "30d":
-        start = datetime.combine(today - timedelta(days=30), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "90d":
-        start = datetime.combine(today - timedelta(days=90), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "1y":
-        start = datetime.combine(today - timedelta(days=365), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
+    order_date_filter = True
+    period_map = {"today": 0, "7d": 7, "30d": 30, "90d": 90, "1y": 365}
+    if period in period_map:
+        days_back = period_map[period]
+        start_date = today - timedelta(days=days_back)
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        order_date_filter = ShopOrder.created_at >= start_dt
 
+    # Fetch all items sold in this period with their orders and products
     query = select(
-        Product.category,
-        func.coalesce(func.sum(ShopOrderItem.subtotal), 0.0).label("revenue"),
-        func.coalesce(func.sum(ShopOrderItem.quantity), 0).label("qty_sold")
-    ).join(ShopOrderItem, ShopOrderItem.product_id == Product.id).join(
-        ShopOrder, ShopOrder.id == ShopOrderItem.order_id
+        ShopOrderItem, 
+        ShopOrder.total_amount, 
+        ShopOrder.final_amount,
+        Product
+    ).join(ShopOrder, ShopOrder.id == ShopOrderItem.order_id).join(
+        Product, Product.id == ShopOrderItem.product_id
     ).where(
-        ShopOrder.shop_id == current_user.id,
-        ShopOrder.status.in_(["completed", "dispatched"]),
-        date_filter
-    ).group_by(Product.category).order_by(col("revenue").desc())
+        ShopOrder.shop_id == shop_id,
+        ShopOrder.status.in_(SOLD_STATUSES),
+        order_date_filter
+    )
+    
+    results = await session.exec(query)
+    items_data = results.all()
 
-    results = (await session.exec(query)).all()
-    return [{"category": r[0], "revenue": float(r[1]), "qty_sold": int(r[2])} for r in results]
+    # Aggregate by category
+    category_stats = {}
+    
+    for item, total_amt, final_amt, prod in items_data:
+        cat = prod.category or "unknown"
+        if cat not in category_stats:
+            category_stats[cat] = {"revenue": 0.0, "qty_sold": 0, "profit": 0.0}
+        
+        # 1. Net Revenue (pro-rate order discount to this item)
+        discount_ratio = (final_amt / total_amt) if total_amt > 0 else 1.0
+        net_item_revenue = item.subtotal * discount_ratio
+        
+        # 2. Total Cost (Base Cost + Proportional Overhead)
+        base_cost = (prod.cost_price or 0.0) * item.quantity
+        total_overhead = (prod.apportioned_transport or 0) + (prod.apportioned_labour or 0) + (prod.apportioned_other or 0)
+        
+        # Fetch lifetime sales to determine original batch size for overhead apportionment
+        # Note: In a high-traffic system, we'd cache 'original_batch_size' on the Product model instead of re-querying.
+        lifetime_q = select(func.coalesce(func.sum(ShopOrderItem.quantity), 0)).where(ShopOrderItem.product_id == prod.id)
+        lifetime_sold = (await session.exec(lifetime_q)).first() or 0
+        original_batch_qty = (prod.quantity or 0) + lifetime_sold
+        
+        apportioned_overhead = 0.0
+        if original_batch_qty > 0:
+            apportioned_overhead = total_overhead * (item.quantity / original_batch_qty)
+            
+        item_landed_cost = base_cost + apportioned_overhead
+        item_profit = net_item_revenue - item_landed_cost
+        
+        category_stats[cat]["revenue"] += net_item_revenue
+        category_stats[cat]["qty_sold"] += item.quantity
+        category_stats[cat]["profit"] += item_profit
+
+    # Format output
+    output = []
+    for cat, stats in category_stats.items():
+        output.append({
+            "category": cat,
+            "revenue": round(stats["revenue"], 2),
+            "qty_sold": int(stats["qty_sold"]),
+            "profit": round(stats["profit"], 2)
+        })
+        
+    return sorted(output, key=lambda x: x["revenue"], reverse=True)
 
 
 @router.get("/shop/top-products")
@@ -410,41 +476,59 @@ async def get_top_products(
     if current_user.role != "shop":
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    # Date range filter
+    shop_id = current_user.id
+    SOLD_STATUSES = ["dispatched", "completed"]
+
+    # Date range filters
     now = datetime.utcnow()
     today = now.date()
-    date_filter = True
-    if period == "today":
-        start = datetime.combine(today, datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "7d":
-        start = datetime.combine(today - timedelta(days=7), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "30d":
-        start = datetime.combine(today - timedelta(days=30), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "90d":
-        start = datetime.combine(today - timedelta(days=90), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
-    elif period == "1y":
-        start = datetime.combine(today - timedelta(days=365), datetime.min.time())
-        date_filter = ShopOrder.created_at >= start
+    order_date_filter = True
+    period_map = {"today": 0, "7d": 7, "30d": 30, "90d": 90, "1y": 365}
+    if period in period_map:
+        days_back = period_map[period]
+        start_date = today - timedelta(days=days_back)
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        order_date_filter = ShopOrder.created_at >= start_dt
 
+    # Fetch all items sold in this period with their orders
     query = select(
-        ShopOrderItem.product_id,
-        ShopOrderItem.product_name,
-        func.coalesce(func.sum(ShopOrderItem.quantity), 0).label("units_sold"),
-        func.coalesce(func.sum(ShopOrderItem.subtotal), 0.0).label("revenue"),
+        ShopOrderItem, 
+        ShopOrder.total_amount, 
+        ShopOrder.final_amount,
+        ShopOrder.created_at
     ).join(ShopOrder, ShopOrder.id == ShopOrderItem.order_id).where(
-        ShopOrder.shop_id == current_user.id,
-        ShopOrder.status.in_(["completed", "dispatched"]),
-        date_filter,
-    ).group_by(ShopOrderItem.product_id, ShopOrderItem.product_name).order_by(col("revenue").desc())
+        ShopOrder.shop_id == shop_id,
+        ShopOrder.status.in_(SOLD_STATUSES),
+        order_date_filter
+    )
+    
+    results = await session.exec(query)
+    items_data = results.all()
 
-    results = (await session.exec(query)).all()
+    # Aggregate by product (batch)
+    product_stats = {}
+    
+    for item, total_amt, final_amt, created_at in items_data:
+        pid = item.product_id
+        if pid not in product_stats:
+            product_stats[pid] = {
+                "name": item.product_name,
+                "units_sold": 0,
+                "revenue": 0.0,
+                "last_sale": created_at
+            }
+        
+        # 1. Net Revenue (pro-rate order discount)
+        discount_ratio = (final_amt / total_amt) if total_amt > 0 else 1.0
+        net_item_revenue = item.subtotal * discount_ratio
+        
+        product_stats[pid]["units_sold"] += item.quantity
+        product_stats[pid]["revenue"] += net_item_revenue
+        if created_at > product_stats[pid]["last_sale"]:
+            product_stats[pid]["last_sale"] = created_at
 
     # Fetch product details for cost and batch info
-    product_ids = [r[0] for r in results]
+    product_ids = list(product_stats.keys())
     prod_dict: dict = {}
     if product_ids:
         prod_stmt = select(Product).where(Product.id.in_(product_ids))
@@ -452,27 +536,135 @@ async def get_top_products(
         prod_dict = {p.id: p for p in prod_res.all()}
 
     output = []
-    for pid, pname, units_sold, revenue in results:
+    for pid, stats in product_stats.items():
         prod = prod_dict.get(pid)
+        units_sold = stats["units_sold"]
+        revenue = stats["revenue"]
+        
         cost_price = (prod.cost_price or 0) if prod else 0
-        total_cost = cost_price * units_sold
-        overhead = 0
+        base_cost = cost_price * units_sold
+        
+        # Calculate overhead proportional to units sold in this period
+        overhead = 0.0
         if prod:
-            overhead = ((prod.apportioned_transport or 0) + (prod.apportioned_labour or 0) + (prod.apportioned_other or 0))
-        profit = revenue - total_cost - overhead
+            total_overhead = ((prod.apportioned_transport or 0) + (prod.apportioned_labour or 0) + (prod.apportioned_other or 0))
+            
+            # Fetch lifetime sales
+            lifetime_q = select(func.coalesce(func.sum(ShopOrderItem.quantity), 0)).where(ShopOrderItem.product_id == pid)
+            lifetime_sold = (await session.exec(lifetime_q)).first() or 0
+            original_batch_qty = (prod.quantity or 0) + lifetime_sold
+            
+            if original_batch_qty > 0:
+                overhead = total_overhead * (units_sold / original_batch_qty)
+
+        profit = revenue - base_cost - overhead
         output.append({
             "product_id": pid,
-            "product_name": pname,
+            "product_name": stats["name"],
             "category": prod.category if prod else "unknown",
             "batch_number": prod.batch_number if prod else None,
             "batch_id": pid,
             "units_sold": int(units_sold),
-            "revenue": float(revenue),
+            "revenue": round(float(revenue), 2),
             "cost_price": cost_price,
-            "total_cost": total_cost,
-            "overhead": overhead,
-            "profit": float(profit),
+            "total_cost": round(base_cost, 2),
+            "overhead": round(overhead, 2),
+            "profit": round(float(profit), 2),
             "remaining_qty": prod.quantity if prod else 0,
+            "selling_price": prod.price if prod else 0,
+            "last_sale_date": stats["last_sale"].isoformat() if stats["last_sale"] else None,
         })
 
-    return output
+    return sorted(output, key=lambda x: x["revenue"], reverse=True)
+
+@router.get("/shop/channel-breakdown")
+async def get_channel_breakdown(
+    period: str = Query("30d", description="today|7d|30d|90d|1y|all"),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Returns summarized channel (payment_mode) sales metrics."""
+    if current_user.role != "shop":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    shop_id = current_user.id
+    now = datetime.utcnow()
+    today = now.date()
+    order_date_filter = True
+    period_map = {"today": 0, "7d": 7, "30d": 30, "90d": 90, "1y": 365}
+    if period in period_map:
+        days_back = period_map[period]
+        start_date = today - timedelta(days=days_back)
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        order_date_filter = ShopOrder.created_at >= start_dt
+
+    query = select(
+        col(ShopOrder.payment_mode),
+        func.count(ShopOrder.id).label("orders"),
+        func.sum(ShopOrder.final_amount).label("revenue")
+    ).where(
+        ShopOrder.shop_id == shop_id,
+        ShopOrder.status.in_(["dispatched", "completed"]),
+        order_date_filter
+    ).group_by(col(ShopOrder.payment_mode))
+
+    results = await session.exec(query)
+    
+    output = []
+    for pm, ops, rev in results.all():
+        output.append({
+            "channel": pm or "unknown",
+            "orders": ops,
+            "revenue": float(rev) if rev else 0.0,
+            "average_order_value": float(rev / ops) if ops > 0 else 0.0
+        })
+    
+    return sorted(output, key=lambda x: x["revenue"], reverse=True)
+
+@router.get("/shop/order-health")
+async def get_order_health(
+    period: str = Query("30d", description="today|7d|30d|90d|1y|all"),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Returns count and percentage of orders grouped by status."""
+    if current_user.role != "shop":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    shop_id = current_user.id
+    now = datetime.utcnow()
+    today = now.date()
+    order_date_filter = True
+    period_map = {"today": 0, "7d": 7, "30d": 30, "90d": 90, "1y": 365}
+    if period in period_map:
+        days_back = period_map[period]
+        start_date = today - timedelta(days=days_back)
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        order_date_filter = ShopOrder.created_at >= start_dt
+
+    query = select(
+        col(ShopOrder.status),
+        func.count(ShopOrder.id).label("count")
+    ).where(
+        ShopOrder.shop_id == shop_id,
+        order_date_filter
+    ).group_by(col(ShopOrder.status))
+
+    results = await session.exec(query)
+    
+    total_orders = 0
+    raw_data = []
+    for st, ct in results.all():
+        raw_data.append({"status": st or "unknown", "count": ct})
+        total_orders += ct
+
+    output = []
+    for item in raw_data:
+        pct = (item["count"] / total_orders * 100) if total_orders > 0 else 0.0
+        output.append({
+            "status": item["status"],
+            "count": item["count"],
+            "percentage": round(pct, 1)
+        })
+        
+    return sorted(output, key=lambda x: x["count"], reverse=True)

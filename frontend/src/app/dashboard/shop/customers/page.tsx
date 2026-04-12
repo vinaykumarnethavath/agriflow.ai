@@ -11,6 +11,13 @@ export default function ShopCustomersPage() {
 
     useEffect(() => {
         fetchCustomers();
+
+        // Poll every 15 seconds for real-time updates
+        const interval = setInterval(() => {
+            fetchCustomers();
+        }, 15000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const fetchCustomers = async () => {

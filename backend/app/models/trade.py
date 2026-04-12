@@ -126,6 +126,7 @@ class ShopOrderCreate(SQLModel):
 
 class ShopOrderStatusUpdate(SQLModel):
     status: Optional[str] = None
+    payment_status: Optional[str] = None  # "paid" | "pending" — shop marks cash received
     discount: Optional[float] = None  # Shop can give discount when confirming
     expense_transportation: Optional[float] = None
     expense_labour: Optional[float] = None

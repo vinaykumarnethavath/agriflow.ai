@@ -12,15 +12,6 @@ import api from "@/lib/api";
 import { getDraftBatches, DraftBatch, getMyProducts, Product, getTopProducts } from "@/lib/api";
 import Link from "next/link";
 
-const PERIOD_OPTIONS = [
-    { label: "Today", value: "today" },
-    { label: "Week", value: "7d" },
-    { label: "Month", value: "30d" },
-    { label: "3 Months", value: "90d" },
-    { label: "Year", value: "1y" },
-    { label: "All", value: "all" },
-];
-
 const EXPENSE_CATEGORIES = [
     { value: "rent", label: "🏪 Rent", color: "bg-purple-100 text-purple-700", isBatch: false },
     { value: "wages", label: "👷 Regular Wages", color: "bg-indigo-100 text-indigo-700", isBatch: false },
@@ -59,7 +50,7 @@ interface BusinessExpense {
 }
 
 export default function ShopAccountingPage() {
-    const [period, setPeriod] = useState("30d");
+    const [period, setPeriod] = useState("all");
     const [summary, setSummary] = useState<AccountingSummary | null>(null);
     const [expenses, setExpenses] = useState<BusinessExpense[]>([]);
     const [loading, setLoading] = useState(true);
@@ -296,17 +287,6 @@ export default function ShopAccountingPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="flex border rounded-lg overflow-hidden">
-                            {PERIOD_OPTIONS.map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    onClick={() => setPeriod(opt.value)}
-                                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${period === opt.value ? "bg-green-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </div>
                         <button
                             onClick={fetchAll}
                             className="flex items-center gap-1 text-sm bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg border border-green-200 font-medium"
