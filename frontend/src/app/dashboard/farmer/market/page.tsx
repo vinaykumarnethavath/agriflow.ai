@@ -56,6 +56,10 @@ interface CartItem {
 interface ShopInfo {
     id: number;
     name: string;
+    village?: string;
+    mandal?: string;
+    district?: string;
+    state?: string;
 }
 
 interface OrderItem {
@@ -110,6 +114,8 @@ export default function MarketPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [selectedShop, setSelectedShop] = useState<number | null>(null);
     const [shops, setShops] = useState<ShopInfo[]>([]);
+    const [nearbyShopIds, setNearbyShopIds] = useState<Set<number> | null>(null);
+    const [radiusKm, setRadiusKm] = useState<number>(50);
     const [orderPlaced, setOrderPlaced] = useState(false);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [paymentMode, setPaymentMode] = useState<"cash" | "razorpay">("razorpay");
@@ -127,8 +133,12 @@ export default function MarketPage() {
     useEffect(() => {
         fetchProducts();
         fetchOrders();
-        fetchShops();
+        fetchNearbyShops(radiusKm);
     }, []);
+
+    useEffect(() => {
+        fetchNearbyShops(radiusKm);
+    }, [radiusKm]);
 
     const fetchProducts = async () => {
         try {
@@ -141,12 +151,44 @@ export default function MarketPage() {
         }
     };
 
-    const fetchShops = async () => {
+    const fetchNearbyShops = async (radius: number) => {
         try {
-            const response = await api.get("/products/shops");
-            setShops(response.data);
+            const response = await api.get("/location/nearby/internal", {
+                params: {
+                    types: "shop",
+                    radius_km: radius,
+                    limit: 100,
+                },
+            });
+            const providers = (response.data || []) as Array<{
+                user_id: number;
+                name?: string;
+                village?: string;
+                mandal?: string;
+                district?: string;
+                state?: string;
+            }>;
+            const nextShops = providers
+                .filter(p => typeof p.user_id === "number")
+                .map(p => ({
+                    id: p.user_id,
+                    name: p.name || "Shop",
+                    village: p.village,
+                    mandal: p.mandal,
+                    district: p.district,
+                    state: p.state,
+                }));
+            setShops(nextShops);
+            const ids = new Set<number>(nextShops.map(s => s.id));
+            setNearbyShopIds(ids);
+
+            setSelectedShop(prev => {
+                if (prev === null) return prev;
+                return ids.has(prev) ? prev : null;
+            });
         } catch (error) {
             console.error("Failed to fetch shops:", error);
+            setNearbyShopIds(null);
         }
     };
 
@@ -182,10 +224,11 @@ export default function MarketPage() {
 
             const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
             const matchesShop = selectedShop === null || product.user_id === selectedShop;
+            const matchesNearby = nearbyShopIds ? nearbyShopIds.has(product.user_id) : true;
 
-            return matchesSearch && matchesCategory && matchesShop;
+            return matchesSearch && matchesCategory && matchesShop && matchesNearby;
         });
-    }, [products, searchQuery, selectedCategory, selectedShop]);
+    }, [products, searchQuery, selectedCategory, selectedShop, nearbyShopIds]);
 
     const groupedFilteredProducts = useMemo(() => {
         const groups: Record<string, Product & { related_batches: Product[] }> = {};
@@ -751,25 +794,18 @@ export default function MarketPage() {
         );
     }
 
-    // ===========================
-    //  MAIN MARKET VIEW
-    // ===========================
     return (
         <div className="space-y-6 p-2">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link href="/dashboard/farmer">
-                        <Button variant="outline" size="sm" className="border-gray-300 text-gray-700">
-                            <ArrowLeft className="h-4 w-4 mr-2" /> Dashboard
+                        <Button variant="outline" className="flex items-center gap-2 border-gray-300 text-gray-700">
+                            <ArrowLeft className="h-4 w-4" /> Back
                         </Button>
                     </Link>
-                    <div>
-                        <h1 className="text-3xl font-bold text-green-900">Buy Fertilizers & More</h1>
-                        <p className="text-gray-500">Browse products from local shops</p>
-                    </div>
+                    <h1 className="text-2xl font-bold text-gray-800">Market</h1>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                     <Button
                         variant="outline"
                         onClick={() => { setShowHistory(true); fetchOrders(); }}
@@ -816,7 +852,9 @@ export default function MarketPage() {
                         <option value="all">All Shops</option>
                         {shops.map(shop => (
                             <option key={shop.id} value={shop.id}>
-                                {shop.name} ({(Math.random() * 5 + 1).toFixed(1)} km away)
+                                {shop.name}{(shop.village || shop.mandal || shop.district || shop.state)
+                                    ? ` (${shop.village || shop.mandal || shop.district || shop.state})`
+                                    : ""}
                             </option>
                         ))}
                     </select>

@@ -77,8 +77,9 @@ app.include_router(profile_routers.router)
 app.include_router(payments.router)
 app.include_router(shop_accounting.router)
 app.include_router(rag.router)
-from .routers import weather, market_prices, news
+from .routers import weather, market_prices, news, location
 app.include_router(weather.router)
 app.include_router(market_prices.router)
 app.include_router(news.router)
+app.include_router(location.router)
 

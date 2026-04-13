@@ -1174,15 +1174,11 @@ export default function FarmerDashboard() {
                     </Card>
                 )
             }
-
-
-
-
             {/* ═══════════════════════════════════════════════════
-                7. IMPORTANT NEWS (Scrollable)
+                8. AGRICULTURAL NEWS (Live, Past 15 Days)
                ═══════════════════════════════════════════════════ */}
             <div>
-                <NewsWidget limit={5} />
+                <NewsWidget limit={10} />
             </div>
 
 

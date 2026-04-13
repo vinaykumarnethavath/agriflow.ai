@@ -62,12 +62,18 @@ export default function NewsPage() {
                             </div>
 
                             <div className="flex md:flex-col gap-2 justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-4">
-                                <Button variant="outline" size="sm" className="w-full">
+                                <Button variant="outline" size="sm" className="w-full" onClick={() => {
+                                    if (navigator.share) {
+                                        navigator.share({ title: item.title, text: item.summary, url: item.url || window.location.href }).catch(console.error);
+                                    }
+                                }}>
                                     <Share2 className="h-4 w-4 mr-2" /> Share
                                 </Button>
-                                <Button size="sm" className="w-full">
-                                    Read More <ExternalLink className="h-4 w-4 ml-2" />
-                                </Button>
+                                {item.url && (
+                                    <Button size="sm" className="w-full" onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')}>
+                                        Read More <ExternalLink className="h-4 w-4 ml-2" />
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </CardContent>

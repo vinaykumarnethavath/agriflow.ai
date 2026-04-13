@@ -3,10 +3,14 @@ import httpx
 from fastapi import APIRouter
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
+from dotenv import load_dotenv, find_dotenv
 
 router = APIRouter(prefix="/weather", tags=["weather"])
 
-OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
+def _get_openweather_api_key() -> str:
+    dotenv_path = find_dotenv(usecwd=True)
+    load_dotenv(dotenv_path=dotenv_path if dotenv_path else None, override=True)
+    return os.getenv("OPENWEATHER_API_KEY", "")
 
 def _get_day_name(offset: int) -> str:
     """Get day name based on offset from today."""
@@ -16,22 +20,34 @@ def _get_day_name(offset: int) -> str:
         return "Tomorrow"
     return (datetime.now() + timedelta(days=offset)).strftime("%a")
 
-async def _fetch_openweather(lat: float, lon: float) -> dict:
+async def _fetch_openweather(lat: float, lon: float, api_key: str) -> dict:
     """Fetch real weather from OpenWeatherMap API."""
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             # Current weather
             current_resp = await client.get(
                 "https://api.openweathermap.org/data/2.5/weather",
-                params={"lat": lat, "lon": lon, "appid": OPENWEATHER_API_KEY, "units": "metric"}
+                params={"lat": lat, "lon": lon, "appid": api_key, "units": "metric"}
             )
+            if current_resp.status_code != 200:
+                print(
+                    f"OpenWeather current weather error: {current_resp.status_code} {current_resp.text[:300]}",
+                    flush=True,
+                )
+                return None
             current_data = current_resp.json()
             
             # 5-day forecast (free tier)
             forecast_resp = await client.get(
                 "https://api.openweathermap.org/data/2.5/forecast",
-                params={"lat": lat, "lon": lon, "appid": OPENWEATHER_API_KEY, "units": "metric"}
+                params={"lat": lat, "lon": lon, "appid": api_key, "units": "metric"}
             )
+            if forecast_resp.status_code != 200:
+                print(
+                    f"OpenWeather forecast error: {forecast_resp.status_code} {forecast_resp.text[:300]}",
+                    flush=True,
+                )
+                return None
             forecast_data = forecast_resp.json()
         
         # Parse current
@@ -162,9 +178,18 @@ async def get_weather(lat: float = 17.385, lon: float = 78.4867):
     otherwise returns realistic deterministic mock data.
     Default coordinates: Hyderabad, India.
     """
-    if OPENWEATHER_API_KEY:
-        result = await _fetch_openweather(lat, lon)
+    api_key = _get_openweather_api_key()
+    if api_key:
+        result = await _fetch_openweather(lat, lon, api_key)
         if result:
+            result["source"] = "openweather"
             return result
+    else:
+        print(
+            "OPENWEATHER_API_KEY not set (or not loaded). Returning mock weather.",
+            flush=True,
+        )
     
-    return _get_realistic_mock(lat, lon)
+    mock = _get_realistic_mock(lat, lon)
+    mock["source"] = "mock"
+    return mock

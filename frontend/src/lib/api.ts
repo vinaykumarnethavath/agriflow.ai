@@ -839,6 +839,8 @@ export interface NewsItem {
     source: string;
     verified: boolean;
     date: string;
+    url?: string;
+    image_url?: string;
 }
 
 export const getWeather = async () => {
@@ -851,8 +853,62 @@ export const getMarketPrices = async () => {
     return response.data;
 };
 
-export const getNews = async () => {
-    const response = await api.get<NewsItem[]>('/news/');
+export const getNews = async (q?: string) => {
+    const params: Record<string, string> = {};
+    if (q) params.q = q;
+    const response = await api.get<NewsItem[]>('/news/', { params });
+    return response.data;
+};
+
+// --- Location Services ---
+
+export interface GeocodedLocation {
+    formatted_address: string;
+    components: {
+        village: string;
+        district: string;
+        state: string;
+        country: string;
+        postcode: string;
+    };
+    lat: number;
+    lng: number;
+    confidence: number;
+}
+
+export interface NearbyPlace {
+    name: string;
+    type: string;
+    lat: number;
+    lng: number;
+    distance_km: number;
+    address: string;
+}
+
+export interface DistanceResult {
+    origin: { lat: number; lng: number };
+    destination: { lat: number; lng: number };
+    distance_km: number;
+    distance_miles: number;
+}
+
+export const geocodeAddress = async (q: string) => {
+    const response = await api.get<GeocodedLocation>('/location/geocode', { params: { q } });
+    return response.data;
+};
+
+export const reverseGeocode = async (lat: number, lon: number) => {
+    const response = await api.get<GeocodedLocation>('/location/reverse', { params: { lat, lon } });
+    return response.data;
+};
+
+export const getNearbyPlaces = async (lat: number, lon: number, types = 'market,shop', radius_km = 50) => {
+    const response = await api.get<NearbyPlace[]>('/location/nearby', { params: { lat, lon, types, radius_km } });
+    return response.data;
+};
+
+export const getDistance = async (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const response = await api.get<DistanceResult>('/location/distance', { params: { lat1, lon1, lat2, lon2 } });
     return response.data;
 };
 

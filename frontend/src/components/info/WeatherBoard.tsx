@@ -10,16 +10,89 @@ export default function WeatherBoard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const resolveFallbackLocationFromProfile = async () => {
+            try {
+                const profileRes = await api.get('/farmer/profile');
+                const p = profileRes.data || {};
+
+                const qPrimary = [
+                    p.village,
+                    p.mandal,
+                    p.district,
+                    p.state,
+                    'India',
+                ].filter(Boolean).join(', ');
+
+                const qWithPin = [
+                    p.village,
+                    p.mandal,
+                    p.district,
+                    p.state,
+                    p.pincode,
+                    'India',
+                ].filter(Boolean).join(', ');
+
+                const queries = [qPrimary, qWithPin].filter(q => q && q.trim().length > 0);
+                for (const q of queries) {
+                    const geoRes = await api.get('/location/geocode', { params: { q } });
+                    const loc = geoRes.data as any;
+                    if (loc?.lat && loc?.lng) return { lat: loc.lat as number, lon: loc.lng as number };
+                }
+                return null;
+            } catch (e) {
+                return null;
+            }
+        };
+
+        const fetchWeatherForCoords = async (lat: number, lon: number) => {
+            const res = await api.get('/weather/', { params: { lat, lon } });
+            setWeather(res.data);
+        };
+
         const fetchWeather = async () => {
             try {
-                const res = await api.get('/weather/');
-                setWeather(res.data);
+                if (!navigator.geolocation) {
+                    const fallback = await resolveFallbackLocationFromProfile();
+                    if (fallback) {
+                        await fetchWeatherForCoords(fallback.lat, fallback.lon);
+                    } else {
+                        const res = await api.get('/weather/');
+                        setWeather(res.data);
+                    }
+                    return;
+                }
+
+                await new Promise<void>((resolve) => {
+                    navigator.geolocation.getCurrentPosition(
+                        async (position) => {
+                            try {
+                                await fetchWeatherForCoords(position.coords.latitude, position.coords.longitude);
+                            } catch (e) {
+                                console.error("Failed to fetch weather", e);
+                            }
+                            resolve();
+                        },
+                        async (err) => {
+                            console.error("Geolocation error:", err);
+                            const fallback = await resolveFallbackLocationFromProfile();
+                            if (fallback) {
+                                await fetchWeatherForCoords(fallback.lat, fallback.lon);
+                            } else {
+                                const res = await api.get('/weather/');
+                                setWeather(res.data);
+                            }
+                            resolve();
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                    );
+                });
             } catch (err) {
                 console.error("Failed to fetch weather", err);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchWeather();
     }, []);
 
