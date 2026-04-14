@@ -63,6 +63,15 @@ app.add_middleware(
 
 from fastapi.exceptions import RequestValidationError
 
+@app.middleware("http")
+async def log_options_requests(request: Request, call_next):
+    if request.method == "OPTIONS":
+        origin = request.headers.get("origin")
+        acrm = request.headers.get("access-control-request-method")
+        acrh = request.headers.get("access-control-request-headers")
+        print(f"[cors] OPTIONS {request.url.path} origin={origin} acrm={acrm} acrh={acrh}")
+    return await call_next(request)
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     safe_errors = []
