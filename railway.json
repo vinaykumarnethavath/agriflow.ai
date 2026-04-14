@@ -5,7 +5,6 @@
     "watchPatterns": ["backend/**"]
   },
   "deploy": {
-    "rootDirectory": "backend",
     "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE"
   }
