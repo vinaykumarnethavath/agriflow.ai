@@ -86,7 +86,7 @@ const Sidebar = () => {
             <div className="mb-8">
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                     <Sprout className="h-8 w-8 text-green-400" />
-                    AgriChain
+                    AgriFlow
                 </h1>
                 <p className="text-xs text-green-300 mt-1">Supply Chain Platform</p>
             </div>

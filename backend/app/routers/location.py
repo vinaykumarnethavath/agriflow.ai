@@ -323,7 +323,7 @@ async def _nominatim_forward(*, query: str, country: str = "IN") -> dict | None:
                     "limit": 10,
                     "countrycodes": country.lower(),
                 },
-                headers={"User-Agent": "agrichain.ai/1.0"},
+                headers={"User-Agent": "agriflow.ai/1.0"},
             )
             if resp.status_code != 200:
                 return None
@@ -355,7 +355,7 @@ async def _nominatim_reverse(*, lat: float, lon: float) -> dict | None:
                     "format": "json",
                     "addressdetails": 1,
                 },
-                headers={"User-Agent": "agrichain.ai/1.0"},
+                headers={"User-Agent": "agriflow.ai/1.0"},
             )
             if resp.status_code != 200:
                 return None

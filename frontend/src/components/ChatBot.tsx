@@ -40,7 +40,7 @@ const WELCOME_MESSAGES: Record<string, string> = {
     farmer: "Hello! I'm your Farm Assistant. I can help with your crops, expenses, harvests, sales, and provide agricultural advice.",
     shop: "Hello! I'm your Shop Assistant. I can help with your inventory, orders, sales analytics, expenses, and business insights.",
     manufacturer: "Hello! I'm your Mill Assistant. I can help with your purchases, production batches, sales, and manufacturing operations.",
-    customer: "Hello! I'm your AgriChain Assistant. I can help you find products, track orders, and answer questions about agriculture.",
+    customer: "Hello! I'm your AgriFlow Assistant. I can help you find products, track orders, and answer questions about agriculture.",
 };
 
 const QUICK_QUESTIONS_BY_ROLE: Record<string, string[]> = {

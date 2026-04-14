@@ -35,24 +35,24 @@ def send_registration_otp_email(to_email: str, otp: str, role: str):
     role_label = role.replace("_", " ").title()
     try:
         message = MIMEMultipart("alternative")
-        message["Subject"] = "AgriChain - Verify Your Email"
+        message["Subject"] = "AgriFlow - Verify Your Email"
         message["From"] = mail_settings.smtp_user
         message["To"] = to_email
 
-        text = f"Your AgriChain email verification code is: {otp}. This code expires in 10 minutes."
+        text = f"Your AgriFlow email verification code is: {otp}. This code expires in 10 minutes."
         html = f"""
         <html>
           <body style="font-family: Arial, sans-serif; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-              <h2 style="color: #166534; text-align: center;">Verify Your AgriChain Account</h2>
+              <h2 style="color: #166534; text-align: center;">Verify Your AgriFlow Account</h2>
               <p>Hello,</p>
-              <p>You are creating an <strong>{role_label}</strong> account on AgriChain. Use the code below to verify your email:</p>
+              <p>You are creating an <strong>{role_label}</strong> account on AgriFlow. Use the code below to verify your email:</p>
               <div style="background-color: #f0fdf4; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
                 <span style="font-size: 36px; font-weight: bold; color: #16a34a; letter-spacing: 8px;">{otp}</span>
               </div>
               <p>This code will expire in <strong>10 minutes</strong>. If you did not try to register, please ignore this email.</p>
               <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-              <p style="font-size: 12px; color: #666; text-align: center;">AgriChain - Connecting Farmers &amp; Markets</p>
+              <p style="font-size: 12px; color: #666; text-align: center;">AgriFlow - Connecting Farmers &amp; Markets</p>
             </div>
           </body>
         </html>
@@ -83,25 +83,25 @@ def send_otp_email(to_email: str, otp: str):
     try:
         # Create the email message
         message = MIMEMultipart("alternative")
-        message["Subject"] = "AgriChain - Password Reset OTP"
+        message["Subject"] = "AgriFlow - Password Reset OTP"
         message["From"] = mail_settings.smtp_user
         message["To"] = to_email
 
         # Plain-text and HTML versions
-        text = f"Your AgriChain password reset OTP is: {otp}. This code expires in 10 minutes."
+        text = f"Your AgriFlow password reset OTP is: {otp}. This code expires in 10 minutes."
         html = f"""
         <html>
           <body style="font-family: Arial, sans-serif; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-              <h2 style="color: #166534; text-align: center;">AgriChain Password Reset</h2>
+              <h2 style="color: #166534; text-align: center;">AgriFlow Password Reset</h2>
               <p>Hello,</p>
-              <p>You requested a password reset for your AgriChain account. Please use the following One-Time Password (OTP) to proceed:</p>
+              <p>You requested a password reset for your AgriFlow account. Please use the following One-Time Password (OTP) to proceed:</p>
               <div style="background-color: #f0fdf4; padding: 20px; text-align: center; border-radius: 8px;">
                 <span style="font-size: 32px; font-weight: bold; color: #16a34a; letter-spacing: 5px;">{otp}</span>
               </div>
               <p style="margin-top: 20px;">This code will expire in <strong>10 minutes</strong>. If you did not request this, please ignore this email.</p>
               <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-              <p style="font-size: 12px; color: #666; text-align: center;">AgriChain - Connecting Farmers & Markets</p>
+              <p style="font-size: 12px; color: #666; text-align: center;">AgriFlow - Connecting Farmers & Markets</p>
             </div>
           </body>
         </html>

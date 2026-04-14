@@ -155,7 +155,7 @@ export default function RegisterPage() {
                             <Sprout className="h-6 w-6 text-green-600" />
                         </div>
                     </div>
-                    <h1 className="text-2xl font-bold text-foreground">Join AgriChain</h1>
+                    <h1 className="text-2xl font-bold text-foreground">Join AgriFlow</h1>
                     <p className="text-sm text-muted-foreground">Create an account to get started</p>
                 </div>
 

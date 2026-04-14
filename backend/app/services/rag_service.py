@@ -1,5 +1,5 @@
 """
-Privacy-Aware RAG Service for AgriChain
+Privacy-Aware RAG Service for AgriFlow
 ========================================
 Combines local database knowledge with Groq LLM for external knowledge,
 while strictly protecting personal/sensitive information.
@@ -398,7 +398,7 @@ async def call_groq(question: str, context: Optional[dict] = None, role: str = "
     client = AsyncGroq(api_key=api_key)
 
     system_prompt = (
-        "You are AgriChain AI, a helpful agricultural assistant for Indian farmers, shops, and manufacturers. "
+        "You are AgriFlow AI, a helpful agricultural assistant for Indian farmers, shops, and manufacturers. "
         "You provide advice on farming, crop management, fertilizers, market prices, government schemes, "
         "and business operations. Keep answers concise, practical, and in simple language. "
         "Always answer in English. Use ₹ for currency. "
