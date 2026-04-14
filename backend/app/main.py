@@ -21,6 +21,7 @@ app.mount("/static", StaticFiles(directory="uploads"), name="static")
 frontend_url = os.getenv("FRONTEND_URL", "")
 cors_allow_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
 cors_allow_origins_regex = os.getenv("CORS_ALLOW_ORIGINS_REGEX", "")
+cors_allow_credentials_env = os.getenv("CORS_ALLOW_CREDENTIALS", "true")
 
 allow_origins = [
     "http://localhost:3000",
@@ -47,11 +48,15 @@ if cors_allow_origins:
             if origin:
                 allow_origins.append(origin)
 
+allow_credentials = cors_allow_credentials_env.strip().lower() in {"1", "true", "yes"}
+if allow_origins == ["*"]:
+    allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
     allow_origin_regex=cors_allow_origins_regex or None,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
