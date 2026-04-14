@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import traceback
 import os
+import asyncio
 from .database import init_db
 from fastapi.staticfiles import StaticFiles
 from .routers import auth, crops, products, orders, traceability, farmer, upload, analytics, manufacturer, customer, profile_routers, payments, shop_accounting, rag
@@ -60,7 +61,14 @@ async def debug_exception_handler(request: Request, exc: Exception):
 
 @app.on_event("startup")
 async def on_startup():
-    await init_db()
+    async def _init_db_safe():
+        try:
+            await init_db()
+        except Exception as exc:
+            print(f"[startup] init_db failed: {exc}")
+            traceback.print_exc()
+
+    asyncio.create_task(_init_db_safe())
 
 @app.get("/health")
 def health_check():
