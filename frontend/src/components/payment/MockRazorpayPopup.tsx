@@ -160,7 +160,7 @@ export default function MockRazorpayPopup({
                                             { id: 'cod', name: 'Pay on Delivery', sub: 'Pay in cash or pay online.', icon: <span className="font-bold text-gray-600 text-[10px]">₹</span> },
                                         ].map((opt) => (
                                             <div key={opt.id}>
-                                                <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50" onClick={() => setSelectedMethod(selectedMethod === opt.id ? null : opt.id)}>
+                                                <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50" onClick={() => setSelectedMethod((prev: string | null) => prev === opt.id ? null : opt.id)}>
                                                     <div className="w-8 h-8 rounded-md border border-gray-200 flex items-center justify-center bg-gray-50">
                                                         {opt.icon}
                                                     </div>

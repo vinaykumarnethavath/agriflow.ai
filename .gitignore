@@ -1,15 +1,63 @@
+# Environment files
 .env
+.env.local
+.env.production.local
 backend/.env
 frontend/.env
-backend/.env.local
 frontend/.env.local
-node_modules
-__pycache__
+backend/.env.local
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+
+# Python
+__pycache__/
 *.pyc
-.next
-.venv
-venv
+*.pyo
+*.egg-info/
+
+# Next.js
+.next/
+out/
+
+# Database
 *.db
 agri.db
 agrichain.db
+
+# Uploads (user-generated)
 uploads/
+
+# Build artifacts
+*.log
+build_log.txt
+dev_output.log
+out_frontend.txt
+error_frontend.txt
+ts_errors.txt
+backend.log
+tsconfig.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Scratch/test files
+scratch_*.py
+test_*.py
+test_*.js
+check_*.py
+investigate.py
+list_*.py
+alter_*.py
+fix_*.py
+force_*.py
+restore_*.py
+view_*.py
+clear_*.py

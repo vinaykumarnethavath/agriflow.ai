@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -9,7 +9,7 @@ import { UserRole } from "@/types";
 
 type ResetMethod = "email" | "phone";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordContent() {
     const [resetMethod, setResetMethod] = useState<ResetMethod>("email");
     const [email, setEmail] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
@@ -180,5 +180,13 @@ export default function ForgotPasswordPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ForgotPasswordPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="h-8 w-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" /></div>}>
+            <ForgotPasswordContent />
+        </Suspense>
     );
 }

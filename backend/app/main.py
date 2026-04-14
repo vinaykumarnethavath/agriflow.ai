@@ -10,6 +10,9 @@ from .routers import auth, crops, products, orders, traceability, farmer, upload
 
 app = FastAPI(title="AgriChain API")
 
+# Ensure uploads directory exists (required for Railway/production)
+os.makedirs("uploads", exist_ok=True)
+
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="uploads"), name="static")
 

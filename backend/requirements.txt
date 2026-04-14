@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlmodel
 alembic
 pyjwt
@@ -15,3 +15,5 @@ groq
 python-jose[cryptography]
 email-validator
 razorpay
+gunicorn
+psycopg2-binary

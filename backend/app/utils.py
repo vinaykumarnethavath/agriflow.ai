@@ -2,10 +2,14 @@ import bcrypt
 from datetime import datetime, timedelta
 import jwt
 from typing import Optional
+import os
+from dotenv import load_dotenv
 
-SECRET_KEY = "supersecretkey_change_this_for_production"
+load_dotenv()
+
+SECRET_KEY = os.getenv("JWT_SECRET", "supersecretkey_change_this_for_production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
