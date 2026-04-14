@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import api, { Crop, WeatherData } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,6 @@ import {
     Eye, EyeOff, Calendar, MessageSquare
 } from "lucide-react";
 import Link from "next/link";
-import api, { Crop, WeatherData } from "@/lib/api";
 import { Modal } from "@/components/ui/modal";
 import MarketPriceWidget from "@/components/info/MarketPriceWidget";
 import NewsWidget from "@/components/info/NewsWidget";
@@ -186,6 +186,35 @@ export default function FarmerDashboard() {
     const [showAddActivity, setShowAddActivity] = useState(false);
     const [newActivity, setNewActivity] = useState({ text: '', daysLeft: 7, type: 'custom' });
 
+    const customActivitiesStorageKey = useMemo(() => {
+        const userId = (user as any)?.id;
+        return userId ? `custom_activities_farmer_${userId}` : "custom_activities_farmer";
+    }, [user]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        try {
+            const raw = window.localStorage.getItem(customActivitiesStorageKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    setCustomActivities(parsed);
+                }
+            }
+        } catch {
+            // ignore
+        }
+    }, [customActivitiesStorageKey]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        try {
+            window.localStorage.setItem(customActivitiesStorageKey, JSON.stringify(customActivities));
+        } catch {
+            // ignore
+        }
+    }, [customActivities, customActivitiesStorageKey]);
+
     const handleCreateCrop = async (e: React.FormEvent) => {
         e.preventDefault();
         setAddingCrop(true);
@@ -264,7 +293,7 @@ export default function FarmerDashboard() {
             setProfile(profileRes.data);
             setShowForm(false);
 
-            const cropsRes = await api.get("/crops");
+            const cropsRes = await api.get("/crops/");
             setCrops(cropsRes.data);
 
             // Fetch weather
@@ -1005,7 +1034,14 @@ export default function FarmerDashboard() {
                                     </span>
                                     {activity.type === 'custom' && (
                                         <button
-                                            onClick={() => setCustomActivities(prev => prev.filter((_, i) => i !== customActivities.indexOf(activity)))}
+                                            onClick={() => {
+                                                const idxInCustom = customActivities.findIndex(
+                                                    (a) => a.type === 'custom' && a.text === activity.text && a.daysLeft === activity.daysLeft
+                                                );
+                                                if (idxInCustom >= 0) {
+                                                    setCustomActivities((prev) => prev.filter((_, i) => i !== idxInCustom));
+                                                }
+                                            }}
                                             className="text-red-400 hover:text-red-600 text-xs"
                                         >
                                             <Trash2 className="h-3 w-3" />
