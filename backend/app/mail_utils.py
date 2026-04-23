@@ -14,6 +14,9 @@ class MailSettings(BaseSettings):
     smtp_password: str = "your-app-password"
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 465
+    smtp_use_ssl: bool = True
+    smtp_use_starttls: bool = False
+    smtp_timeout_seconds: int = 20
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_PATH) if ENV_PATH.exists() else ".env",
@@ -30,15 +33,47 @@ if mail_settings.smtp_password == "your-app-password":
 else:
     print("OK: Mail system loaded custom password.")
 
+
+def _send_email(to_email: str, subject: str, text: str, html: str) -> bool:
+    message = MIMEMultipart("alternative")
+    message["Subject"] = subject
+    message["From"] = mail_settings.smtp_user
+    message["To"] = to_email
+
+    part1 = MIMEText(text, "plain")
+    part2 = MIMEText(html, "html")
+    message.attach(part1)
+    message.attach(part2)
+
+    host = mail_settings.smtp_host
+    port = int(mail_settings.smtp_port)
+    timeout = int(getattr(mail_settings, "smtp_timeout_seconds", 20) or 20)
+    use_ssl = bool(getattr(mail_settings, "smtp_use_ssl", False))
+    use_starttls = bool(getattr(mail_settings, "smtp_use_starttls", False))
+
+    print(f"DEBUG: SMTP connect host={host} port={port} ssl={use_ssl} starttls={use_starttls} timeout={timeout}")
+
+    context = ssl.create_default_context()
+    if use_ssl:
+        with smtplib.SMTP_SSL(host, port, context=context, timeout=timeout) as server:
+            server.login(mail_settings.smtp_user, mail_settings.smtp_password)
+            server.sendmail(mail_settings.smtp_user, to_email, message.as_string())
+        return True
+
+    with smtplib.SMTP(host, port, timeout=timeout) as server:
+        server.ehlo()
+        if use_starttls:
+            server.starttls(context=context)
+            server.ehlo()
+        server.login(mail_settings.smtp_user, mail_settings.smtp_password)
+        server.sendmail(mail_settings.smtp_user, to_email, message.as_string())
+    return True
+
 def send_registration_otp_email(to_email: str, otp: str, role: str):
     """Sends an account verification OTP email during registration."""
     role_label = role.replace("_", " ").title()
     try:
-        message = MIMEMultipart("alternative")
-        message["Subject"] = "AgriFlow - Verify Your Email"
-        message["From"] = mail_settings.smtp_user
-        message["To"] = to_email
-
+        subject = "AgriFlow - Verify Your Email"
         text = f"Your AgriFlow email verification code is: {otp}. This code expires in 10 minutes."
         html = f"""
         <html>
@@ -58,15 +93,7 @@ def send_registration_otp_email(to_email: str, otp: str, role: str):
         </html>
         """
 
-        part1 = MIMEText(text, "plain")
-        part2 = MIMEText(html, "html")
-        message.attach(part1)
-        message.attach(part2)
-
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(mail_settings.smtp_host, mail_settings.smtp_port, context=context) as server:
-            server.login(mail_settings.smtp_user, mail_settings.smtp_password)
-            server.sendmail(mail_settings.smtp_user, to_email, message.as_string())
+        _send_email(to_email=to_email, subject=subject, text=text, html=html)
 
         print(f"OK: Registration OTP email sent to {to_email}")
         return True
@@ -81,12 +108,7 @@ def send_otp_email(to_email: str, otp: str):
     """Sends an OTP email using Gmail SMTP."""
     
     try:
-        # Create the email message
-        message = MIMEMultipart("alternative")
-        message["Subject"] = "AgriFlow - Password Reset OTP"
-        message["From"] = mail_settings.smtp_user
-        message["To"] = to_email
-
+        subject = "AgriFlow - Password Reset OTP"
         # Plain-text and HTML versions
         text = f"Your AgriFlow password reset OTP is: {otp}. This code expires in 10 minutes."
         html = f"""
@@ -107,18 +129,7 @@ def send_otp_email(to_email: str, otp: str):
         </html>
         """
 
-        part1 = MIMEText(text, "plain")
-        part2 = MIMEText(html, "html")
-        message.attach(part1)
-        message.attach(part2)
-
-        # Create a secure SSL context and send the email
-        context = ssl.create_default_context()
-        
-        print(f"DEBUG: Connecting to {mail_settings.smtp_host}:{mail_settings.smtp_port}...")
-        with smtplib.SMTP_SSL(mail_settings.smtp_host, mail_settings.smtp_port, context=context) as server:
-            server.login(mail_settings.smtp_user, mail_settings.smtp_password)
-            server.sendmail(mail_settings.smtp_user, to_email, message.as_string())
+        _send_email(to_email=to_email, subject=subject, text=text, html=html)
         
         print(f"OK: OTP Email sent successfully to {to_email}")
         return True
