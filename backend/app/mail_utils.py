@@ -3,6 +3,7 @@ import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
+import httpx
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
@@ -17,6 +18,9 @@ class MailSettings(BaseSettings):
     smtp_use_ssl: bool = True
     smtp_use_starttls: bool = False
     smtp_timeout_seconds: int = 20
+
+    resend_api_key: str = ""
+    resend_from: str = ""
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_PATH) if ENV_PATH.exists() else ".env",
@@ -35,6 +39,31 @@ else:
 
 
 def _send_email(to_email: str, subject: str, text: str, html: str) -> bool:
+    resend_api_key = (getattr(mail_settings, "resend_api_key", "") or "").strip()
+    resend_from = (getattr(mail_settings, "resend_from", "") or "").strip()
+    if resend_api_key:
+        if not resend_from:
+            raise RuntimeError("RESEND_FROM is required when RESEND_API_KEY is set")
+        print(f"DEBUG: Sending email via Resend to={to_email} from={resend_from}")
+        resp = httpx.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {resend_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": resend_from,
+                "to": [to_email],
+                "subject": subject,
+                "text": text,
+                "html": html,
+            },
+            timeout=20.0,
+        )
+        if resp.status_code >= 400:
+            raise RuntimeError(f"Resend error: status={resp.status_code} body={resp.text}")
+        return True
+
     message = MIMEMultipart("alternative")
     message["Subject"] = subject
     message["From"] = mail_settings.smtp_user
