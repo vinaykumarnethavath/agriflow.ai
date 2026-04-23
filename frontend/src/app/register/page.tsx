@@ -5,23 +5,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { Sprout, Mail, Phone, ShieldCheck, RefreshCw } from "lucide-react";
+import { Sprout, Mail, Phone } from "lucide-react";
 import { UserRole } from "@/types";
 
 type AuthMethod = "email" | "phone";
-type EmailStep = "form" | "otp";
 
 export default function RegisterPage() {
     const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
 
     // ── Email form state ──────────────────────────────────────────────────────
-    const [emailStep, setEmailStep] = useState<EmailStep>("form");
     const [emailFormData, setEmailFormData] = useState({
         full_name: "", email: "", password: "", confirm_password: "",
         role: UserRole.FARMER as UserRole,
     });
-    const [otpCode, setOtpCode] = useState("");
-    const [otpSent, setOtpSent] = useState(false);
 
     // ── Phone form state ──────────────────────────────────────────────────────
     const [phone, setPhone] = useState("");
@@ -38,11 +34,10 @@ export default function RegisterPage() {
     const router = useRouter();
 
     const inputCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-muted-foreground text-foreground";
-    const inputDisabledCls = "w-full rounded-lg border border-input bg-muted/50 px-4 py-2 text-sm text-muted-foreground cursor-not-allowed";
     const selectCls = "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground";
 
-    // ── Step 1: Send OTP ──────────────────────────────────────────────────────
-    const handleSendOtp = async (e: React.FormEvent) => {
+    // ── Email Registration (no OTP) ───────────────────────────────────────────
+    const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
@@ -55,33 +50,11 @@ export default function RegisterPage() {
 
         setLoading(true);
         try {
-            await api.post("/auth/send-register-otp", { email: email.toLowerCase().trim(), role });
-            setOtpSent(true);
-            setEmailStep("otp");
-            setOtpCode("");
-        } catch (err: any) {
-            setError(err.response?.data?.detail || "Failed to send verification code");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // ── Step 2: Verify OTP + Create Account ───────────────────────────────────
-    const handleVerifyAndCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-
-        if (otpCode.length !== 6) { setError("Enter the 6-digit code from your email"); return; }
-
-        const { full_name, email, password, role } = emailFormData;
-        setLoading(true);
-        try {
             await api.post("/auth/register", {
                 email: email.toLowerCase().trim(),
                 password,
                 full_name,
                 role,
-                email_otp_code: otpCode,
             });
             const { data } = await api.post("/auth/login", { email: email.toLowerCase().trim(), password, role });
             const user = { id: data.id, email, role: data.role, full_name };
@@ -89,25 +62,7 @@ export default function RegisterPage() {
             login(data.access_token, data.role);
             router.push(`/dashboard/${data.role}`);
         } catch (err: any) {
-            const detail = err.response?.data?.detail;
-            setError(typeof detail === "string" ? detail : (err.message || "Verification failed"));
-            setLoading(false);
-        }
-    };
-
-    // ── Resend OTP ────────────────────────────────────────────────────────────
-    const handleResend = async () => {
-        setError("");
-        setOtpCode("");
-        setLoading(true);
-        try {
-            await api.post("/auth/send-register-otp", {
-                email: emailFormData.email.toLowerCase().trim(),
-                role: emailFormData.role,
-            });
-            setOtpSent(true);
-        } catch (err: any) {
-            setError(err.response?.data?.detail || "Failed to resend code");
+            setError(err.response?.data?.detail || "Registration failed");
         } finally {
             setLoading(false);
         }
@@ -160,25 +115,23 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="p-8 pb-10 space-y-5">
-                    {/* Method Toggle — only show on form step */}
-                    {emailStep === "form" && (
-                        <div className="flex rounded-lg border border-border overflow-hidden">
-                            <button type="button"
-                                onClick={() => { setAuthMethod("email"); setError(""); }}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "email" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
-                                <Mail className="h-4 w-4" /> Email
-                            </button>
-                            <button type="button"
-                                onClick={() => { setAuthMethod("phone"); setError(""); }}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "phone" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
-                                <Phone className="h-4 w-4" /> Phone Number
-                            </button>
-                        </div>
-                    )}
+                    {/* Method Toggle */}
+                    <div className="flex rounded-lg border border-border overflow-hidden">
+                        <button type="button"
+                            onClick={() => { setAuthMethod("email"); setError(""); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "email" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
+                            <Mail className="h-4 w-4" /> Email
+                        </button>
+                        <button type="button"
+                            onClick={() => { setAuthMethod("phone"); setError(""); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-colors ${authMethod === "phone" ? "bg-green-600 text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}>
+                            <Phone className="h-4 w-4" /> Phone Number
+                        </button>
+                    </div>
 
-                    {/* ── EMAIL: STEP 1 — FORM ── */}
-                    {authMethod === "email" && emailStep === "form" && (
-                        <form onSubmit={handleSendOtp} className="space-y-5">
+                    {/* ── EMAIL FORM ── */}
+                    {authMethod === "email" && (
+                        <form onSubmit={handleEmailSubmit} className="space-y-5">
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-muted-foreground block">Full Name</label>
                                 <input type="text" placeholder="John Doe" required autoComplete="name"
@@ -233,78 +186,12 @@ export default function RegisterPage() {
                             <button type="submit" disabled={loading || !passwordsMatch}
                                 className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
                                 {loading
-                                    ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sending Code...</span>
-                                    : <span className="flex items-center justify-center gap-2"><Mail className="h-4 w-4" /> Send Verification Code</span>}
+                                    ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</span>
+                                    : <span className="flex items-center justify-center gap-2"><Mail className="h-4 w-4" /> Create Account</span>}
                             </button>
                             <div className="text-center text-sm pt-2">
                                 <span className="text-muted-foreground">Already have an account? </span>
                                 <Link href="/login" className="text-green-600 font-bold hover:underline">Login Here</Link>
-                            </div>
-                        </form>
-                    )}
-
-                    {/* ── EMAIL: STEP 2 — OTP ── */}
-                    {authMethod === "email" && emailStep === "otp" && (
-                        <form onSubmit={handleVerifyAndCreate} className="space-y-5">
-                            {/* Locked summary */}
-                            <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-1">
-                                <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
-                                    <ShieldCheck className="h-4 w-4" /> Verification code sent!
-                                </div>
-                                <p className="text-xs text-green-600">
-                                    We sent a 6-digit code to <strong>{emailFormData.email}</strong>
-                                    {" "}for your <strong>{emailFormData.role.replace("_", " ")}</strong> account.
-                                    Check your inbox (and spam folder).
-                                </p>
-                            </div>
-
-                            {/* Locked fields preview */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold text-muted-foreground block">Name</label>
-                                    <div className={inputDisabledCls}>{emailFormData.full_name}</div>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold text-muted-foreground block">Role</label>
-                                    <div className={inputDisabledCls}>{emailFormData.role.replace("_", " ").replace(/\b\w/g, c => c.toUpperCase())}</div>
-                                </div>
-                            </div>
-
-                            {/* OTP input */}
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-semibold text-muted-foreground block">Enter 6-digit Code</label>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    pattern="[0-9]*"
-                                    maxLength={6}
-                                    placeholder="_ _ _ _ _ _"
-                                    autoFocus
-                                    value={otpCode}
-                                    onChange={e => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                                    className="w-full rounded-lg border border-input bg-background px-4 py-3 text-2xl font-bold tracking-[0.5em] text-center outline-none transition-all focus:border-green-500 focus:ring-2 focus:ring-green-500/10 text-foreground placeholder:text-muted-foreground/40 placeholder:tracking-normal placeholder:text-base"
-                                />
-                            </div>
-
-                            {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 border border-red-100 text-center text-sm font-medium">{error}</div>}
-
-                            <button type="submit" disabled={loading || otpCode.length !== 6}
-                                className="w-full bg-green-600 text-white rounded-lg py-3 font-bold shadow-md hover:bg-green-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none">
-                                {loading
-                                    ? <span className="flex items-center justify-center gap-2"><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating Account...</span>
-                                    : <span className="flex items-center justify-center gap-2"><ShieldCheck className="h-4 w-4" /> Verify & Create Account</span>}
-                            </button>
-
-                            {/* Resend + Edit */}
-                            <div className="flex items-center justify-between text-sm pt-1">
-                                <button type="button" onClick={handleResend} disabled={loading}
-                                    className="flex items-center gap-1 text-green-600 font-semibold hover:underline disabled:opacity-50">
-                                    <RefreshCw className="h-3.5 w-3.5" /> Resend Code
-                                </button>
-                                <button type="button" onClick={() => { setEmailStep("form"); setOtpCode(""); setError(""); }}
-                                    className="text-muted-foreground hover:text-foreground underline text-xs">
-                                    Edit details
-                                </button>
                             </div>
                         </form>
                     )}
