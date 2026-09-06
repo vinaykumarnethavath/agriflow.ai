@@ -12,6 +12,7 @@ httpx
 bcrypt
 python-dotenv
 groq
+google-generativeai
 python-jose[cryptography]
 email-validator
 razorpay

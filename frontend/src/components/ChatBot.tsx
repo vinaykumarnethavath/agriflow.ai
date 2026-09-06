@@ -8,6 +8,7 @@ import {
 import { sendChatMessage, ChatResponse } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { T, useBatchTranslate } from "@/components/TranslateText";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -157,9 +158,14 @@ export const ChatBot = () => {
     // ----- Derived -----
     const activeSession = sessions.find(s => s.id === activeSessionId);
     const messages = activeSession?.messages ?? [];
-    const quickQuestions = QUICK_QUESTIONS_BY_ROLE[userRole] || QUICK_QUESTIONS_BY_ROLE.farmer;
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
-    // ----- Init: load from ROLE-SPECIFIC localStorage -----
+    // ----- Translation hooks -----
+    const quickQuestions = QUICK_QUESTIONS_BY_ROLE[userRole] || QUICK_QUESTIONS_BY_ROLE.farmer;
+    const { translations: translatedQuickQs } = useBatchTranslate(quickQuestions);
+    const { translations: translatedMessageTexts } = useBatchTranslate(messages.map(m => m.text));
+
+    // ----- Initialization -----
     // Re-runs when userRole changes (e.g., logging out and in as a different role)
     useEffect(() => {
         const { sessions: loaded, activeId } = loadSessions(userRole);
@@ -341,10 +347,10 @@ export const ChatBot = () => {
 
     const getSourceLabel = (source?: string) => {
         switch (source) {
-            case "db_only": return "Your Data";
-            case "external": return "AI Knowledge";
-            case "mixed": return "AI + Your Data";
-            default: return "Assistant";
+            case "db_only": return <T>Your Data</T>;
+            case "external": return <T>AI Knowledge</T>;
+            case "mixed": return <T>AI + Your Data</T>;
+            default: return <T>Assistant</T>;
         }
     };
 
@@ -424,7 +430,7 @@ export const ChatBot = () => {
                                     ? activeSession.title
                                     : t('chatbot.title')}
                             </h3>
-                            <p className="text-[10px] text-green-100 font-medium">Smart Farm & Business AI</p>
+                            <p className="text-[10px] text-green-100 font-medium"><T>Smart Farm & Business AI</T></p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -545,9 +551,9 @@ export const ChatBot = () => {
                     <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Privacy Legend */}
                         <div className="bg-slate-50 dark:bg-slate-800/50 p-1.5 flex justify-center gap-4 text-[10px] border-b border-slate-100 dark:border-slate-800 shrink-0">
-                            <span className="flex items-center gap-1 text-muted-foreground"><span className="w-2 h-2 rounded-full bg-green-500"></span> Your Data</span>
-                            <span className="flex items-center gap-1 text-muted-foreground"><span className="w-2 h-2 rounded-full bg-purple-500"></span> AI Only</span>
-                            <span className="flex items-center gap-1 text-muted-foreground"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Mixed</span>
+                            <span className="flex items-center gap-1 text-muted-foreground"><span className="w-2 h-2 rounded-full bg-green-500"></span> <T>Your Data</T></span>
+                            <span className="flex items-center gap-1 text-muted-foreground"><span className="w-2 h-2 rounded-full bg-purple-500"></span> <T>AI Only</T></span>
+                            <span className="flex items-center gap-1 text-muted-foreground"><span className="w-2 h-2 rounded-full bg-blue-500"></span> <T>Mixed</T></span>
                         </div>
 
                         {/* Message List */}
@@ -587,7 +593,7 @@ export const ChatBot = () => {
                                                         msg.source === "mixed" && "border-blue-500"
                                                     )
                                             )}>
-                                                {formatMessageText(msg.text)}
+                                                {formatMessageText(translatedMessageTexts[msgIndex] || msg.text)}
 
                                                 {/* Rewrite button (user messages only) */}
                                                 {msg.sender === "user" && !isLoading && (
@@ -641,13 +647,13 @@ export const ChatBot = () => {
                         {/* Quick Questions (only show if no user messages yet) */}
                         {!hasUserMessages && (
                             <div className="px-3 pb-2 pt-1 flex flex-wrap gap-1.5 justify-center bg-slate-50/50 dark:bg-slate-900 shrink-0">
-                                {quickQuestions.map((q, i) => (
+                                {quickQuestions.map((originalQ, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => handleSendMessage(q)}
+                                        onClick={() => handleSendMessage(originalQ)}
                                         className="text-[11px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full hover:bg-green-50 hover:text-green-700 hover:border-green-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
                                     >
-                                        {q}
+                                        {translatedQuickQs[i] || originalQ}
                                     </button>
                                 ))}
                             </div>
@@ -678,7 +684,7 @@ export const ChatBot = () => {
                             </div>
                             <div className="text-center mt-1.5 flex items-center justify-center gap-1">
                                 <AlertCircle className="w-3 h-3 text-slate-400" />
-                                <p className="text-[9px] text-slate-400 font-medium">Personal data is securely protected.</p>
+                                <p className="text-[9px] text-slate-400 font-medium"><T>Personal data is securely protected.</T></p>
                             </div>
                         </div>
                     </div>
