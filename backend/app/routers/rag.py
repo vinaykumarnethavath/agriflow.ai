@@ -17,6 +17,7 @@ router = APIRouter(prefix="/rag", tags=["rag"])
 
 class ChatRequest(BaseModel):
     question: str
+    lang: Optional[str] = "en"
 
 
 class ChatResponse(BaseModel):
@@ -34,5 +35,6 @@ async def chat(
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
-    result = await handle_chat(current_user, request.question.strip(), session)
+    result = await handle_chat(current_user, request.question.strip(), session, target_lang=request.lang or "en")
     return ChatResponse(**result)
+

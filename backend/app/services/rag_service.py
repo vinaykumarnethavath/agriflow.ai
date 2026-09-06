@@ -473,12 +473,14 @@ async def call_groq(
     role: str = "farmer",
     strict_data_only: bool = False,
     mixed_mode: bool = False,
+    target_lang: str = "en",
 ) -> str:
     """Call Groq LLM with sanitised context. Returns the LLM text answer.
 
     Args:
         strict_data_only: When True, the LLM must ONLY use DB data (no advice).
         mixed_mode:       When True, the LLM should blend DB data WITH AI advice.
+        target_lang:      Target language code (e.g. 'te', 'hi', 'ta', etc.)
     """
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key or api_key == "your-groq-api-key-here":
@@ -486,11 +488,14 @@ async def call_groq(
 
     client = AsyncGroq(api_key=api_key)
 
+    from ..routers.translate import SUPPORTED_LANGUAGES
+    target_lang_name = SUPPORTED_LANGUAGES.get(target_lang, "English")
+
     system_prompt = (
         "You are AgriFlow AI, a helpful agricultural assistant for Indian farmers, shops, and manufacturers. "
         "You provide advice on farming, crop management, fertilizers, market prices, government schemes, "
         "and business operations. Keep answers concise, practical, and in simple language. "
-        "Always answer in English. Use ₹ for currency. "
+        f"Respond in {target_lang_name} if possible, otherwise in English. Use ₹ for currency. "
         f"IMPORTANT: The current user's role is '{role}'. Only reference data relevant to this role. "
         "Never mention or reference data from other roles. Each user's data is strictly isolated."
     )
@@ -504,9 +509,7 @@ async def call_groq(
             "using the EXACT numbers from the JSON provided."
             "\n2. Then, supplement with your AI knowledge — recommendations, predictions, "
             "best practices, expected profits, suitable crops, fertilizer advice, etc."
-            "\n3. Clearly distinguish between facts from data vs. AI recommendations. "
-            "For example: 'Based on your data, you have X acres of remaining land. "
-            "I would recommend growing Y because...'"
+            "\n3. Clearly distinguish between facts from data vs. AI recommendations."
             "\n4. If the data shows the user does NOT have a particular crop or record, "
             "say so, then still provide general AI advice about it."
             "\n5. Be practical and actionable. The farmer wants concrete advice."
@@ -556,6 +559,7 @@ async def call_groq(
     # Use slightly higher temperature for mixed mode to allow creative advice
     temp = 0.4 if mixed_mode else 0.2
 
+    raw_answer = "⚠️ AI service temporarily unavailable. Please try again shortly."
     for model_name in models:
         try:
             response = await client.chat.completions.create(
@@ -568,42 +572,31 @@ async def call_groq(
             if "<think>" in content and "</think>" in content:
                 content = content.split("</think>")[-1].strip()
             if content:
-                return content
+                raw_answer = content
+                break
         except Exception as e:
             print(f"[RAG] Groq API error with {model_name}: {e}")
             continue
 
-    return "⚠️ AI service temporarily unavailable. Please try again shortly."
-
+    return raw_answer
 
 
 # ---------------------------------------------------------------------------
 # 4. RAG Orchestrator
 # ---------------------------------------------------------------------------
 
-async def handle_chat(user: User, question: str, session: AsyncSession) -> dict:
+async def handle_chat(user: User, question: str, session: AsyncSession, target_lang: str = "en") -> dict:
     """
     Main entry point. Classifies the question, queries DB if needed,
-    calls Groq if needed, and returns a structured response.
-
-    Data-awareness logic:
-      - For mixed/database classifications, we fetch DB data first.
-      - If a specific crop is mentioned but the user does NOT have it,
-        we downgrade to 'external' (pure AI advice).
-      - If both DB data and AI advice are needed, we use 'mixed' mode.
-
-    Returns:
-        {
-            "answer": str,
-            "source": "db_only" | "external" | "mixed",
-            "data_points": dict | None
-        }
+    calls Groq if needed, translates answer into target_lang, and returns a structured response.
     """
     classification = classify_question(question)
     role = user.role if isinstance(user.role, str) else user.role.value
 
     print(f"[RAG] Question: {question!r}")
     print(f"[RAG] Initial classification: {classification}")
+
+    result = None
 
     # ----- PERSONAL: answer from DB only, never call API -----
     if classification == "personal":
@@ -665,78 +658,86 @@ async def handle_chat(user: User, question: str, session: AsyncSession) -> dict:
                 if k not in ("hashed_password",) and v:
                     answer_parts.append(f"- **{k.replace('_', ' ').title()}**: {v}")
 
-        return {
+        result = {
             "answer": "\n".join(answer_parts),
             "source": "db_only",
             "data_points": None,  # Don't expose raw personal data in API response
         }
 
     # ----- DATABASE: answer from DB data with LLM formatting -----
-    if classification == "database":
+    elif classification == "database":
         db_context = await query_database_context(user, question, session)
 
         if not db_context:
-            return {
+            result = {
                 "answer": "I couldn't find relevant data in your records. Try asking about your crops, expenses, orders, or inventory.",
                 "source": "db_only",
                 "data_points": None,
             }
-
-        answer = await call_groq(question, context=db_context, role=role, strict_data_only=True)
-
-        return {
-            "answer": answer,
-            "source": "db_only",
-            "data_points": db_context,
-        }
+        else:
+            answer = await call_groq(question, context=db_context, role=role, strict_data_only=True, target_lang=target_lang)
+            result = {
+                "answer": answer,
+                "source": "db_only",
+                "data_points": db_context,
+            }
 
     # ----- EXTERNAL: pure general knowledge from Groq -----
-    if classification == "external":
-        answer = await call_groq(question, role=role)
-        return {
+    elif classification == "external":
+        answer = await call_groq(question, role=role, target_lang=target_lang)
+        result = {
             "answer": answer,
             "source": "external",
             "data_points": None,
         }
 
     # ----- MIXED: combine DB context with AI reasoning -----
-    # Fetch DB data first so we can check data-awareness
-    db_context = await query_database_context(user, question, session)
+    else:
+        # Fetch DB data first so we can check data-awareness
+        db_context = await query_database_context(user, question, session)
 
-    # Data-awareness: if the user asks about a specific crop they DON'T have,
-    # downgrade to pure external (AI-only) since their data isn't relevant.
-    mentioned_crops = extract_crop_names_from_question(question)
-    if mentioned_crops and db_context:
-        has_crop = user_has_relevant_crop(mentioned_crops, db_context)
-        if not has_crop:
-            print(f"[RAG] User asked about {mentioned_crops} but doesn't have them → downgrading to external")
-            answer = await call_groq(question, role=role)
-            return {
-                "answer": answer,
-                "source": "external",
-                "data_points": None,
-            }
+        mentioned_crops = extract_crop_names_from_question(question)
+        if mentioned_crops and db_context:
+            has_crop = user_has_relevant_crop(mentioned_crops, db_context)
+            if not has_crop:
+                print(f"[RAG] User asked about {mentioned_crops} but doesn't have them → downgrading to external")
+                answer = await call_groq(question, role=role, target_lang=target_lang)
+                result = {
+                    "answer": answer,
+                    "source": "external",
+                    "data_points": None,
+                }
 
-    # If no DB data at all, fall back to pure external
-    if not db_context:
-        print(f"[RAG] No DB context found → downgrading to external")
-        answer = await call_groq(question, role=role)
-        return {
-            "answer": answer,
-            "source": "external",
-            "data_points": None,
-        }
+        if result is None:
+            if not db_context:
+                print(f"[RAG] No DB context found → downgrading to external")
+                answer = await call_groq(question, role=role, target_lang=target_lang)
+                result = {
+                    "answer": answer,
+                    "source": "external",
+                    "data_points": None,
+                }
+            else:
+                answer = await call_groq(
+                    question,
+                    context=db_context,
+                    role=role,
+                    mixed_mode=True,
+                    target_lang=target_lang
+                )
+                result = {
+                    "answer": answer,
+                    "source": "mixed",
+                    "data_points": db_context,
+                }
 
-    # Full mixed mode: pass DB context + mixed_mode prompt to LLM
-    answer = await call_groq(
-        question,
-        context=db_context,
-        role=role,
-        mixed_mode=True,
-    )
+    # Auto-translate final answer if target_lang != 'en' using Gemini translate_text
+    if target_lang and target_lang != "en" and result and result.get("answer"):
+        try:
+            from ..routers.translate import translate_text
+            result["answer"] = await translate_text(result["answer"], target_lang=target_lang)
+        except Exception as e:
+            print(f"[RAG] Auto-translation error: {e}")
 
-    return {
-        "answer": answer,
-        "source": "mixed",
-        "data_points": db_context,
-    }
+    return result
+

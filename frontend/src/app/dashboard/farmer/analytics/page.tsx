@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
+import { useLanguage } from "@/context/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
@@ -30,6 +31,7 @@ interface Recommendation {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export default function AnalyticsPage() {
+    const { t } = useLanguage();
     const [expenses, setExpenses] = useState<ExpenseData[]>([]);
     const [trends, setTrends] = useState<TrendData[]>([]);
     const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -57,7 +59,7 @@ export default function AnalyticsPage() {
     }, []);
 
     if (loading) {
-        return <div className="p-8 text-center">Loading insights...</div>;
+        return <div className="p-8 text-center">{t("common.loading", "Loading insights...")}</div>;
     }
 
     return (
@@ -67,8 +69,8 @@ export default function AnalyticsPage() {
                     <Brain className="h-6 w-6 text-indigo-600" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground">Analytics & Insights</h1>
-                    <p className="text-muted-foreground">AI-driven recommendations and financial overview</p>
+                    <h1 className="text-3xl font-bold text-foreground">{t("sidebar.salesAnalytics", "Analytics & Insights")}</h1>
+                    <p className="text-muted-foreground">{t("analytics.subtitle", "AI-driven recommendations and financial overview")}</p>
                 </div>
             </div>
 

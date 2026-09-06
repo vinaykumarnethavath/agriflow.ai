@@ -35,6 +35,8 @@ import { Label } from "@/components/ui/label"; // Ensure Label is available or u
 import { ArrowLeft, Plus, Trash2, Sprout, TrendingUp, IndianRupee, Tractor, Droplets, Truck, Pickaxe, Package, Pencil, AlertTriangle, CheckCircle, Info, Lightbulb, QrCode, Store, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
+import { useLanguage } from "@/context/LanguageContext";
+import { T } from "@/components/TranslateText";
 
 const EXPENSE_CATEGORIES = [
     { value: "Input", label: "Input Costs (Seeds, Fertilizers, Pesticides)", icon: Sprout },
@@ -121,6 +123,7 @@ const formatLandArea = (area: number) => {
 };
 
 export default function CropDetailPage() {
+    const { t } = useLanguage();
     const params = useParams();
     const router = useRouter();
     const cropId = Number(params?.id);
@@ -580,12 +583,12 @@ export default function CropDetailPage() {
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Button variant="ghost" onClick={() => router.back()}>
-                    <ArrowLeft className="w-5 h-5 mr-2" /> Back
+                    <ArrowLeft className="w-5 h-5 mr-2" /> {t("common.back", "Back")}
                 </Button>
                 <div>
                     <div className="flex items-center gap-3">
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                            {crop.name}
+                            <T>{crop.name}</T>
                         </h1>
                         <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-green-600">
                             <Pencil className="w-4 h-4" />
@@ -596,20 +599,20 @@ export default function CropDetailPage() {
                             onClick={() => setShowQR(true)}
                             className="bg-white text-green-600 border-green-200 hover:bg-green-50"
                         >
-                            <QrCode className="w-4 h-4 mr-2" /> Traceability
+                            <QrCode className="w-4 h-4 mr-2" /> <T>Traceability</T>
                         </Button>
                     </div>
                     <p className="text-muted-foreground">
-                        {crop.season && <span className="font-semibold text-green-700 mr-2">{crop.season}</span>}
-                        {crop.variety && <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded mr-2 text-xs border border-green-100">{crop.variety}</span>}
-                        {formatLandArea(crop.area)} Acres • Sown on {new Date(crop.sowing_date).toLocaleDateString()}
+                        {crop.season && <span className="font-semibold text-green-700 mr-2"><T>{crop.season}</T></span>}
+                        {crop.variety && <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded mr-2 text-xs border border-green-100"><T>{crop.variety}</T></span>}
+                        {formatLandArea(crop.area)} {t("farmer.acres", "Acres")} • {t("farmer.sownOn", "Sown on")} {new Date(crop.sowing_date).toLocaleDateString()}
                     </p>
                 </div>
                 <div className="ml-auto flex gap-3">
                     <div className={`px-4 py-1 rounded-full text-sm font-medium border ${crop.status === 'Harvested' ? 'bg-purple-100 text-purple-700 border-purple-200' :
                         'bg-green-100 text-green-700 border-green-200'
                         }`}>
-                        {crop.status}
+                        <T>{crop.status}</T>
                     </div>
                 </div>
             </div>
@@ -625,7 +628,7 @@ export default function CropDetailPage() {
                             : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
-                        {tab === "harvest" ? "Yield & Profit" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        {tab === "harvest" ? t("cropDetail.yieldProfit", "Yield & Profit") : tab === "expenses" ? t("farmer.expenses", "Expenses") : t("cropDetail.overview", "Overview")}
                         {activeTab === tab && (
                             <motion.div
                                 layoutId="activeTab"
@@ -644,7 +647,7 @@ export default function CropDetailPage() {
                             : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
-                        {tab === "health" ? "AI Diagnosis" : tab === "inputs" ? "Inputs Used" : tab === "sell" ? "Sell Crop" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        {tab === "health" ? t("cropDetail.aiDiagnosis", "AI Diagnosis") : tab === "inputs" ? t("cropDetail.inputsUsed", "Inputs Used") : tab === "sell" ? t("cropDetail.sellCrop", "Sell Crop") : tab.charAt(0).toUpperCase() + tab.slice(1)}
                         {activeTab === tab && (
                             <motion.div
                                 layoutId="activeTab"
@@ -662,31 +665,31 @@ export default function CropDetailPage() {
                         <Card className="bg-gradient-to-br from-green-50 to-white border-green-100">
                             <CardHeader>
                                 <CardTitle className="text-green-800 flex items-center gap-2">
-                                    <IndianRupee className="w-5 h-5" /> Total Cost
+                                    <IndianRupee className="w-5 h-5" /> {t("farmer.totalCost", "Total Cost")}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold text-green-700">₹{crop.total_cost?.toLocaleString()}</div>
-                                <p className="text-sm text-green-600 mt-1">Sum of all expenses</p>
+                                <p className="text-sm text-green-600 mt-1">{t("cropDetail.sumExpenses", "Sum of all expenses")}</p>
                             </CardContent>
                         </Card>
 
                         <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
                             <CardHeader>
                                 <CardTitle className="text-blue-800 flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5" /> Revenue
+                                    <TrendingUp className="w-5 h-5" /> {t("farmer.revenue", "Revenue")}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold text-blue-700">₹{crop.total_revenue?.toLocaleString()}</div>
-                                <p className="text-sm text-blue-600 mt-1">Yield × Price</p>
+                                <p className="text-sm text-blue-600 mt-1"><T>Yield × Price</T></p>
                             </CardContent>
                         </Card>
 
                         <Card className={`border ${crop.net_profit && crop.net_profit >= 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
                             <CardHeader>
                                 <CardTitle className={`${crop.net_profit && crop.net_profit >= 0 ? 'text-emerald-800' : 'text-red-800'} flex items-center gap-2`}>
-                                    <IndianRupee className="w-5 h-5" /> Net Profit
+                                    <IndianRupee className="w-5 h-5" /> <T>Net Profit</T>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -694,13 +697,13 @@ export default function CropDetailPage() {
                                     ₹{crop.net_profit?.toLocaleString()}
                                 </div>
                                 <p className={`text-sm mt-1 ${crop.net_profit && crop.net_profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                    Revenue - Cost
+                                    <T>Revenue - Cost</T>
                                 </p>
                             </CardContent>
                         </Card>
 
                         <div className="md:col-span-3">
-                            <h3 className="text-lg font-semibold mb-4">Expense Breakdown</h3>
+                            <h3 className="text-lg font-semibold mb-4"><T>Expense Breakdown</T></h3>
                             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                                 {EXPENSE_CATEGORIES.map(cat => {
                                     const total = calculateCategoryTotal(cat.value);
@@ -710,7 +713,7 @@ export default function CropDetailPage() {
                                             <div className="p-2 bg-muted rounded-full text-muted-foreground">
                                                 <Icon className="w-5 h-5" />
                                             </div>
-                                            <span className="text-xs font-medium text-muted-foreground">{cat.label.split(' ')[0]}</span>
+                                            <span className="text-xs font-medium text-muted-foreground"><T>{cat.label.split(' ')[0]}</T></span>
                                             <span className="font-bold text-foreground">₹{total.toLocaleString()}</span>
                                         </div>
                                     )

@@ -27,6 +27,7 @@ import {
     CreditCard
 } from "lucide-react";
 import MockRazorpayPopup from "@/components/payment/MockRazorpayPopup";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Product {
     id: number;
@@ -103,6 +104,7 @@ const COMMON_SHORT_NAMES: Record<string, string> = {
 
 export default function MarketPage() {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -123,11 +125,11 @@ export default function MarketPage() {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     const categories = [
-        { id: "all", name: "All Products", icon: Package },
-        { id: "fertilizer", name: "Fertilizers", icon: Leaf },
-        { id: "pesticide", name: "Pesticides", icon: Bug },
-        { id: "seeds", name: "Seeds", icon: Droplets },
-        { id: "equipment", name: "Equipment", icon: Wrench },
+        { id: "all", name: t("marketPage.allProducts", "All Products"), icon: Package },
+        { id: "fertilizer", name: t("marketPage.fertilizers", "Fertilizers"), icon: Leaf },
+        { id: "pesticide", name: t("marketPage.pesticides", "Pesticides"), icon: Bug },
+        { id: "seeds", name: t("marketPage.seeds", "Seeds"), icon: Droplets },
+        { id: "equipment", name: t("marketPage.equipment", "Equipment"), icon: Wrench },
     ];
 
     useEffect(() => {
@@ -801,10 +803,10 @@ export default function MarketPage() {
                 <div className="flex items-center gap-4">
                     <Link href="/dashboard/farmer">
                         <Button variant="outline" className="flex items-center gap-2 border-gray-300 text-foreground">
-                            <ArrowLeft className="h-4 w-4" /> Back
+                            <ArrowLeft className="h-4 w-4" /> {t("common.back", "Back")}
                         </Button>
                     </Link>
-                    <h1 className="text-2xl font-bold text-foreground">Market</h1>
+                    <h1 className="text-2xl font-bold text-foreground">{t("marketPage.title", "Market")}</h1>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
@@ -812,14 +814,14 @@ export default function MarketPage() {
                         onClick={() => { setShowHistory(true); fetchOrders(); }}
                         className="flex items-center gap-2 border-gray-300 text-foreground"
                     >
-                        <History className="h-4 w-4" /> Order History
+                        <History className="h-4 w-4" /> {t("marketPage.orderHistory", "Order History")}
                     </Button>
                     <Button
                         onClick={() => setShowCart(true)}
                         className="bg-green-600 hover:bg-green-700 text-white relative"
                     >
                         <ShoppingCart className="h-4 w-4 mr-2" />
-                        Cart
+                        {t("marketPage.cart", "Cart")}
                         {cartItemCount > 0 && (
                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
                                 {cartItemCount}
@@ -837,7 +839,7 @@ export default function MarketPage() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <input
                         type="text"
-                        placeholder="Search by name, brand (e.g., DAP, Urea, IFFCO)..."
+                        placeholder={t("marketPage.searchPlaceholder", "Search by name, brand (e.g., DAP, Urea, IFFCO)...")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl focus:border-green-500 outline-none text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-900 placeholder:text-gray-500 dark:placeholder:text-gray-400"
@@ -850,7 +852,7 @@ export default function MarketPage() {
                         onChange={(e) => setSelectedShop(e.target.value === "all" ? null : parseInt(e.target.value))}
                         className="appearance-none pl-10 pr-10 py-3 border-2 border-gray-200 dark:border-zinc-700 rounded-xl focus:border-green-500 outline-none text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-900 min-w-[200px]"
                     >
-                        <option value="all">All Shops</option>
+                        <option value="all">{t("marketPage.allShops", "All Shops")}</option>
                         {shops.map(shop => (
                             <option key={shop.id} value={shop.id}>
                                 {shop.name}{(shop.village || shop.mandal || shop.district || shop.state)
@@ -887,8 +889,8 @@ export default function MarketPage() {
                 <Card className="border-dashed border-2">
                     <CardContent className="p-12 text-center">
                         <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                        <h3 className="text-xl font-bold text-muted-foreground">No products found</h3>
-                        <p className="text-muted-foreground">Try adjusting your search or filters</p>
+                        <h3 className="text-xl font-bold text-muted-foreground">{t("marketPage.noProducts", "No products found")}</h3>
+                        <p className="text-muted-foreground">{t("marketPage.adjustFilters", "Try adjusting your search or filters")}</p>
                     </CardContent>
                 </Card>
             ) : (
@@ -924,10 +926,10 @@ export default function MarketPage() {
                                     {/* Category Badge */}
                                     <span className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${getCategoryColor(product.category)}`}>
                                         {getCategoryIcon(product.category)}
-                                        {product.category}
+                                        {t(`marketPage.${product.category}`, product.category)}
                                     </span>
                                     {product.quantity < 10 && (
-                                        <span className="absolute top-3 right-3 text-xs bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">Low Stock</span>
+                                        <span className="absolute top-3 right-3 text-xs bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">{t("marketPage.lowStock", "Low Stock")}</span>
                                     )}
                                 </div>
 
@@ -955,19 +957,19 @@ export default function MarketPage() {
                                             {product.quantity_per_unit && product.unit && (
                                                 <span className="text-[10px] bg-green-50 text-green-700 font-bold px-2 py-0.5 rounded-full border border-green-100 flex items-center gap-1">
                                                     <Package className="h-3 w-3" />
-                                                    {product.quantity_per_unit} {product.unit} pack
+                                                    {product.quantity_per_unit} {product.unit} {t("marketPage.pack", "pack")}
                                                 </span>
                                             )}
                                             {product.manufacture_date && (
                                                 <span className="text-[10px] bg-sky-50 text-sky-700 font-medium px-2 py-0.5 rounded-full border border-sky-100">
-                                                    Mfg: {new Date(product.manufacture_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                                                    {t("marketPage.mfgDate", "Mfg")}: {new Date(product.manufacture_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
                                                 </span>
                                             )}
                                         </div>
                                         {product.main_composition && (
                                             <div className="mt-1 mb-2">
                                                 <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-1 rounded inline-block">
-                                                    <span className="font-semibold">Composition:</span> {product.main_composition}
+                                                    <span className="font-semibold">{t("marketPage.composition", "Composition")}:</span> {product.main_composition}
                                                 </span>
                                             </div>
                                         )}
@@ -977,10 +979,10 @@ export default function MarketPage() {
                                     <div className="flex justify-between items-end mb-3 mt-auto">
                                         <div>
                                             <p className="text-2xl font-bold text-green-700">₹{product.price}</p>
-                                            <p className="text-xs text-muted-foreground">per unit</p>
+                                            <p className="text-xs text-muted-foreground">{t("marketPage.perUnit", "per unit")}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-medium text-muted-foreground">{product.quantity} in stock</p>
+                                            <p className="text-sm font-medium text-muted-foreground">{product.quantity} {t("marketPage.inStock", "in stock")}</p>
                                         </div>
                                     </div>
 
@@ -996,12 +998,12 @@ export default function MarketPage() {
                                         {inCart ? (
                                             <>
                                                 <CheckCircle className="h-4 w-4 mr-2" />
-                                                In Cart ({inCart.quantity})
+                                                {t("marketPage.inCart", "In Cart")} ({inCart.quantity})
                                             </>
                                         ) : (
                                             <>
                                                 <Plus className="h-4 w-4 mr-2" />
-                                                Add to Cart
+                                                {t("marketPage.addToCart", "Add to Cart")}
                                             </>
                                         )}
                                     </Button>

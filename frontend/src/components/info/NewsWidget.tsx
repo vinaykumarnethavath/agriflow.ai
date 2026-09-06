@@ -12,17 +12,17 @@ interface NewsWidgetProps {
     limit?: number;
 }
 
-function getRelativeTime(dateStr: string): string {
+function getRelativeTime(dateStr: string, locale: string = "en"): string {
     const now = new Date();
     const date = new Date(dateStr);
     const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
 
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 14) return "1 week ago";
-    return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays === 0) return locale === "te" ? "ఈరోజు" : locale === "hi" ? "आज" : locale === "ta" ? "இன்று" : locale === "kn" ? "ಇಂದು" : "Today";
+    if (diffDays === 1) return locale === "te" ? "నిన్న" : locale === "hi" ? "कल" : locale === "ta" ? "நேற்று" : locale === "kn" ? "ನಿನ್ನೆ" : "Yesterday";
+    if (diffDays < 7) return locale === "te" ? `${diffDays} రోజుల క్రితం` : locale === "hi" ? `${diffDays} दिन पहले` : `${diffDays} days ago`;
+    if (diffDays < 14) return locale === "te" ? "1 వారం క్రితం" : locale === "hi" ? "1 सप्ताह पहले" : "1 week ago";
+    return locale === "te" ? `${Math.floor(diffDays / 7)} వారాల క్రితం` : `${Math.floor(diffDays / 7)} weeks ago`;
 }
 
 export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
@@ -154,7 +154,7 @@ export default function NewsWidget({ filterCategory, limit }: NewsWidgetProps) {
                                         </span>
                                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                             <Clock className="h-2.5 w-2.5" />
-                                            {getRelativeTime(item.date)}
+                                            {getRelativeTime(item.date, (useLanguage as any)().locale)}
                                         </span>
                                     </div>
 

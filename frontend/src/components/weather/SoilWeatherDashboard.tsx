@@ -23,6 +23,7 @@ import api, {
     FarmerRecommendation
 } from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
+import { T } from "@/components/TranslateText";
 
 // Soil moisture color thresholds
 function getMoistureColor(val: number) {
@@ -48,12 +49,12 @@ function getWeatherIcon(precip: number, tempMax: number) {
     return "🌥️";
 }
 
-function getDayName(dateStr: string, idx: number) {
-    if (idx === 0) return "Today";
-    if (idx === 1) return "Tomorrow";
+function getDayName(dateStr: string, idx: number, locale: string = "en") {
+    if (idx === 0) return locale === "te" ? "ఈరోజు" : locale === "hi" ? "आज" : locale === "ta" ? "இன்று" : locale === "kn" ? "ಇಂದು" : "Today";
+    if (idx === 1) return locale === "te" ? "రేపు" : locale === "hi" ? "कल" : locale === "ta" ? "நாளை" : locale === "kn" ? "ನಾಳೆ" : "Tomorrow";
     try {
         const dt = new Date(dateStr);
-        return dt.toLocaleDateString("en-US", { weekday: "short" });
+        return dt.toLocaleDateString(locale === "te" ? "te-IN" : locale === "hi" ? "hi-IN" : locale === "ta" ? "ta-IN" : locale === "kn" ? "kn-IN" : "en-US", { weekday: "short" });
     } catch {
         return `Day ${idx + 1}`;
     }
@@ -174,7 +175,7 @@ export default function SoilWeatherDashboard() {
                         </h2>
                         <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-green-100 text-green-800 dark:bg-green-950/80 dark:text-green-300 border border-green-200 dark:border-green-800 inline-flex items-center gap-1">
                             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                            Live Weather & Soil Telemetry
+                            <T>Live Weather & Soil Telemetry</T>
                         </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -190,7 +191,7 @@ export default function SoilWeatherDashboard() {
                     className="text-xs font-semibold gap-1.5 border-border bg-card hover:bg-muted shrink-0"
                 >
                     <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-                    Refresh
+                    {t("common.refresh", "Refresh")}
                 </Button>
             </div>
 
@@ -198,7 +199,7 @@ export default function SoilWeatherDashboard() {
             {loading && !data && (
                 <div className="p-10 rounded-xl bg-card border border-border text-center space-y-2">
                     <div className="h-7 w-7 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                    <p className="text-sm font-semibold text-foreground">Fetching live agricultural telemetry...</p>
+                    <p className="text-sm font-semibold text-foreground"><T>Fetching live agricultural telemetry...</T></p>
                 </div>
             )}
 
@@ -217,7 +218,7 @@ export default function SoilWeatherDashboard() {
                     <Card className="border-border bg-card shadow-xs">
                         <CardContent className="p-3.5 space-y-1">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-muted-foreground">Soil Moisture</span>
+                                <span className="text-xs font-semibold text-muted-foreground"><T>Soil Moisture</T></span>
                                 <div className="p-1 rounded-md bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400">
                                     <Droplets className="h-3.5 w-3.5" />
                                 </div>
@@ -226,7 +227,7 @@ export default function SoilWeatherDashboard() {
                                 {surfaceMoistureVal != null ? `${(surfaceMoistureVal * 100).toFixed(1)}%` : "N/A"}
                             </div>
                             <p className="text-[10px] text-muted-foreground font-medium truncate">
-                                {surfaceMoistureVal != null ? (surfaceMoistureVal > 0.20 ? "Optimal Moisture" : "Needs Watering") : "Surface moisture"}
+                                {surfaceMoistureVal != null ? (surfaceMoistureVal > 0.20 ? <T>Optimal Moisture</T> : <T>Needs Watering</T>) : <T>Surface moisture</T>}
                             </p>
                         </CardContent>
                     </Card>
@@ -235,7 +236,7 @@ export default function SoilWeatherDashboard() {
                     <Card className="border-border bg-card shadow-xs">
                         <CardContent className="p-3.5 space-y-1">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-muted-foreground">Air Temperature</span>
+                                <span className="text-xs font-semibold text-muted-foreground"><T>Air Temperature</T></span>
                                 <div className="p-1 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
                                     <Thermometer className="h-3.5 w-3.5" />
                                 </div>
@@ -246,7 +247,7 @@ export default function SoilWeatherDashboard() {
                             <p className="text-[10px] text-muted-foreground font-medium truncate">
                                 {current.temperature_2m_max != null && current.temperature_2m_min != null
                                     ? `H: ${current.temperature_2m_max.toFixed(0)}° · L: ${current.temperature_2m_min.toFixed(0)}°`
-                                    : "Current temp"}
+                                    : <T>Current temp</T>}
                             </p>
                         </CardContent>
                     </Card>
@@ -255,7 +256,7 @@ export default function SoilWeatherDashboard() {
                     <Card className="border-border bg-card shadow-xs">
                         <CardContent className="p-3.5 space-y-1">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-muted-foreground">Rainfall Today</span>
+                                <span className="text-xs font-semibold text-muted-foreground"><T>Rainfall Today</T></span>
                                 <div className="p-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
                                     <CloudRain className="h-3.5 w-3.5" />
                                 </div>
@@ -266,7 +267,7 @@ export default function SoilWeatherDashboard() {
                                     : (current.precipitation != null ? `${current.precipitation} mm` : "0.0 mm")}
                             </div>
                             <p className="text-[10px] text-muted-foreground font-medium truncate">
-                                Total rainfall
+                                <T>Total rainfall</T>
                             </p>
                         </CardContent>
                     </Card>
@@ -275,7 +276,7 @@ export default function SoilWeatherDashboard() {
                     <Card className="border-border bg-card shadow-xs">
                         <CardContent className="p-3.5 space-y-1">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-muted-foreground">Wind Speed</span>
+                                <span className="text-xs font-semibold text-muted-foreground"><T>Wind Speed</T></span>
                                 <div className="p-1 rounded-md bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
                                     <Wind className="h-3.5 w-3.5" />
                                 </div>
@@ -284,7 +285,7 @@ export default function SoilWeatherDashboard() {
                                 {current.windspeed_10m != null ? `${current.windspeed_10m.toFixed(1)} km/h` : "N/A"}
                             </div>
                             <p className="text-[10px] text-muted-foreground font-medium truncate">
-                                {current.windspeed_10m != null && current.windspeed_10m > 20 ? "Breezy / High Wind" : "Calm / Good for Spray"}
+                                {current.windspeed_10m != null && current.windspeed_10m > 20 ? <T>Breezy / High Wind</T> : <T>Calm / Good for Spray</T>}
                             </p>
                         </CardContent>
                     </Card>
@@ -293,7 +294,7 @@ export default function SoilWeatherDashboard() {
                     <Card className="border-border bg-card shadow-xs col-span-2 sm:col-span-1">
                         <CardContent className="p-3.5 space-y-1">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-muted-foreground">Water Evaporation</span>
+                                <span className="text-xs font-semibold text-muted-foreground"><T>Water Evaporation</T></span>
                                 <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
                                     <Sun className="h-3.5 w-3.5" />
                                 </div>
@@ -304,7 +305,7 @@ export default function SoilWeatherDashboard() {
                                     : "N/A"}
                             </div>
                             <p className="text-[10px] text-muted-foreground font-medium truncate">
-                                Daily soil water loss
+                                <T>Daily soil water loss</T>
                             </p>
                         </CardContent>
                     </Card>
@@ -316,7 +317,7 @@ export default function SoilWeatherDashboard() {
                 <Card className="border-border bg-card shadow-xs">
                     <CardHeader className="p-3.5 sm:p-4 pb-2 border-b border-border">
                         <CardTitle className="text-sm font-bold flex items-center gap-2 text-card-foreground">
-                            🧑‍🌾 Smart Farmer Advisory & Immediate Action Tips
+                            🧑‍🌾 <T>Smart Farmer Advisory & Immediate Action Tips</T>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-3.5 sm:p-4 space-y-2">
@@ -341,8 +342,8 @@ export default function SoilWeatherDashboard() {
                                     >
                                         <span className="text-xl shrink-0 mt-0.5">{rec.icon}</span>
                                         <div>
-                                            <p className="font-bold text-xs">{rec.title}</p>
-                                            <p className="text-[11px] opacity-90 mt-0.5 leading-relaxed">{rec.text}</p>
+                                            <p className="font-bold text-xs"><T>{rec.title}</T></p>
+                                            <p className="text-[11px] opacity-90 mt-0.5 leading-relaxed"><T>{rec.text}</T></p>
                                         </div>
                                     </div>
                                 );
@@ -359,7 +360,7 @@ export default function SoilWeatherDashboard() {
                         <CardTitle className="text-sm font-bold flex items-center justify-between text-card-foreground">
                             <span className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                7-Day Agricultural Weather Forecast
+                                <T>7-Day Agricultural Weather Forecast</T>
                             </span>
                         </CardTitle>
                     </CardHeader>
@@ -381,7 +382,7 @@ export default function SoilWeatherDashboard() {
                                         }`}
                                     >
                                         <div className="text-xs font-bold text-card-foreground">
-                                            {getDayName(d.date, idx)}
+                                            {getDayName(d.date, idx, (useLanguage as any)().locale)}
                                         </div>
                                         <div className="text-[10px] text-muted-foreground">
                                             {d.date.slice(5)}
@@ -418,9 +419,9 @@ export default function SoilWeatherDashboard() {
                         <CardTitle className="text-xs sm:text-sm font-bold flex items-center justify-between text-card-foreground">
                             <span className="flex items-center gap-1.5">
                                 <Layers className="h-4 w-4 text-sky-600 dark:text-sky-400" />
-                                Soil Moisture by Root Depth Levels
+                                <T>Soil Moisture by Root Depth Levels</T>
                             </span>
-                            <span className="text-[11px] font-medium text-muted-foreground">5 Depth Layers</span>
+                            <span className="text-[11px] font-medium text-muted-foreground"><T>5 Depth Layers</T></span>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-3.5 sm:p-4 space-y-2.5">
@@ -437,16 +438,16 @@ export default function SoilWeatherDashboard() {
                                     <div key={layer.key} className="p-2.5 rounded-lg border border-border bg-muted/20 flex flex-col justify-between space-y-1.5">
                                         <div>
                                             <div className="flex justify-between items-start">
-                                                <p className="font-bold text-[11px] text-card-foreground leading-tight">{layer.label}</p>
+                                                <p className="font-bold text-[11px] text-card-foreground leading-tight"><T>{layer.label}</T></p>
                                                 <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${badge.bg}`}>
-                                                    {badge.label}
+                                                    <T>{badge.label}</T>
                                                 </span>
                                             </div>
-                                            <p className="text-[9px] text-muted-foreground mt-0.5">{layer.shortDesc}</p>
+                                            <p className="text-[9px] text-muted-foreground mt-0.5"><T>{layer.shortDesc}</T></p>
                                         </div>
                                         <div>
                                             <div className="flex justify-between items-baseline mb-1">
-                                                <span className="text-[10px] text-muted-foreground font-semibold">Moisture:</span>
+                                                <span className="text-[10px] text-muted-foreground font-semibold"><T>Moisture:</T></span>
                                                 <span className="font-mono font-black text-xs" style={{ color }}>
                                                     {(val * 100).toFixed(1)}%
                                                 </span>
@@ -467,10 +468,10 @@ export default function SoilWeatherDashboard() {
                         </div>
 
                         <div className="pt-1.5 border-t border-border flex flex-wrap items-center justify-between gap-1.5 text-[10px] text-muted-foreground">
-                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> &lt;10% Dry</span>
-                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> 10–20% Low</span>
-                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sky-500" /> 20–30% Optimal</span>
-                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> &gt;30% Moist</span>
+                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> &lt;10% <T>Dry</T></span>
+                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> 10–20% <T>Low</T></span>
+                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sky-500" /> 20–30% <T>Optimal</T></span>
+                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> &gt;30% <T>Moist</T></span>
                         </div>
                     </CardContent>
                 </Card>

@@ -32,22 +32,27 @@ async function flushBatch() {
   }
 
   for (const [locale, group] of byLocale) {
-    const texts = group.map((g) => g.text);
-    try {
-      const { data } = await api.post("/api/translate", {
-        texts,
-        target_lang: locale,
-        source_lang: "en",
-      });
-      const translations: string[] = data?.translations || texts;
-      group.forEach((item, i) => {
-        const translated = translations[i] || item.text;
-        translationCache.set(`${locale}::${item.text}`, translated);
-        item.resolve(translated);
-      });
-    } catch {
-      // On error, resolve with original
-      group.forEach((item) => item.resolve(item.text));
+    // Chunk into batches of 50 to respect backend validation limit
+    const chunkSize = 50;
+    for (let i = 0; i < group.length; i += chunkSize) {
+      const chunk = group.slice(i, i + chunkSize);
+      const texts = chunk.map((g) => g.text);
+      try {
+        const { data } = await api.post("/api/translate", {
+          texts,
+          target_lang: locale,
+          source_lang: "en",
+        });
+        const translations: string[] = data?.translations || texts;
+        chunk.forEach((item, idx) => {
+          const translated = translations[idx] || item.text;
+          translationCache.set(`${locale}::${item.text}`, translated);
+          item.resolve(translated);
+        });
+      } catch (err) {
+        // On error, resolve with original
+        chunk.forEach((item) => item.resolve(item.text));
+      }
     }
   }
 }

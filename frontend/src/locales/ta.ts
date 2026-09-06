@@ -1,7 +1,3 @@
-/**
- * Tamil (தமிழ்) — Translation dictionary for AgriFlow
- */
-
 const ta = {
   common: {
     save: "சேமிக்கவும்",
@@ -42,9 +38,8 @@ const ta = {
     profile: "சுயவிவரம்",
     welcome: "வரவேற்கிறோம்",
     language: "மொழி",
-    selectLanguage: "மொழியைத் தேர்ந்தெடுக்கவும்",
+    selectLanguage: "மொழியைத் தேர்ந்தெடுக்கவும்"
   },
-
   status: {
     active: "செயலில்",
     inactive: "செயலற்றது",
@@ -61,9 +56,8 @@ const ta = {
     draft: "வரைவு",
     growing: "வளர்கிறது",
     harvested: "அறுவடை செய்யப்பட்டது",
-    sold: "விற்கப்பட்டது",
+    sold: "விற்கப்பட்டது"
   },
-
   auth: {
     login: "உள்நுழைவு",
     register: "பதிவு",
@@ -95,9 +89,8 @@ const ta = {
     sendOtp: "OTP அனுப்பு",
     verifyOtp: "OTP சரிபார்",
     enterOtp: "OTP உள்ளிடவும்",
-    supplyChainPlatform: "விநியோகச் சங்கிலி தளம்",
+    supplyChainPlatform: "விநியோகச் சங்கிலி தளம்"
   },
-
   sidebar: {
     dashboard: "டாஷ்போர்டு",
     myCrops: "என் பயிர்கள்",
@@ -118,9 +111,8 @@ const ta = {
     sales: "விற்பனை",
     home: "முகப்பு",
     marketplace: "சந்தை",
-    cart: "கூடை",
+    cart: "கூடை"
   },
-
   farmer: {
     welcomeMessage: "உங்கள் பண்ணை ஒரு பார்வையில்",
     myCrops: "என் பயிர்கள்",
@@ -198,10 +190,8 @@ const ta = {
     bankInfo: "வங்கி தகவல்",
     aiWeatherAlert: "வானிலை எச்சரிக்கை",
     healthy: "ஆரோக்கியமாக உள்ளது",
-    monitor: "கண்காணி",
+    monitor: "கண்காணி"
   },
-
-
   shop: {
     shopDashboard: "கடை டாஷ்போர்டு",
     totalRevenue: "மொத்த வருவாய்",
@@ -228,8 +218,8 @@ const ta = {
     orderValue: "ஆர்டர் மதிப்பு",
     customer: "வாடிக்கையாளர்",
     orderDate: "ஆர்டர் தேதி",
+    discovery: "கண்டறிதல் மற்றும் நுண்ணறிவுகள்"
   },
-
   customer: {
     welcomeSubtitle: "பண்ணையிலிருந்து நேரடியாக உங்கள் வீட்டுக்கு. இன்றே உள்ளூர் விளைபொருட்களைக் கண்டறியுங்கள்.",
     shopNow: "இப்போது வாங்கு",
@@ -246,9 +236,8 @@ const ta = {
     addToCart: "கூடையில் சேர்",
     checkout: "செக்அவுட்",
     orderHistory: "ஆர்டர் வரலாறு",
-    trackOrder: "ஆர்டரைக் கண்காணி",
+    trackOrder: "ஆர்டரைக் கண்காணி"
   },
-
   manufacturer: {
     manufacturerDashboard: "ஆலை டாஷ்போர்டு",
     totalPurchases: "மொத்த கொள்முதல்",
@@ -263,9 +252,8 @@ const ta = {
     supplier: "சப்ளையர்",
     materialType: "பொருள் வகை",
     unitPrice: "ஒரு யூனிட் விலை",
-    totalCost: "மொத்த செலவு",
+    totalCost: "மொத்த செலவு"
   },
-
   chatbot: {
     title: "AgriFlow உதவியாளர்",
     placeholder: "உங்கள் செய்தியை தட்டச்சு செய்யவும்...",
@@ -277,9 +265,8 @@ const ta = {
     welcomeShop: "வணக்கம்! நான் உங்கள் கடை உதவியாளர். சரக்கு, ஆர்டர்கள், விற்பனை பகுப்பாய்வு, செலவுகள் மற்றும் வணிக நுண்ணறிவுகளில் உதவ முடியும்.",
     welcomeManufacturer: "வணக்கம்! நான் உங்கள் ஆலை உதவியாளர். கொள்முதல், உற்பத்தி தொகுதிகள், விற்பனை மற்றும் உற்பத்தி நடவடிக்கைகளில் உதவ முடியும்.",
     welcomeCustomer: "வணக்கம்! நான் உங்கள் AgriFlow உதவியாளர். பொருட்களைக் கண்டறிவது, ஆர்டர்களைக் கண்காணிப்பது மற்றும் விவசாயம் பற்றிய கேள்விகளுக்கு பதிலளிப்பது என உதவ முடியும்.",
-    quickQuestions: "விரைவு கேள்விகள்",
+    quickQuestions: "விரைவு கேள்விகள்"
   },
-
   payments: {
     payment: "கட்டணம்",
     payNow: "இப்போது செலுத்து",
@@ -287,9 +274,8 @@ const ta = {
     paymentMethod: "கட்டண முறை",
     transactionId: "பரிவர்த்தனை ID",
     paymentStatus: "கட்டண நிலை",
-    paymentDate: "கட்டண தேதி",
+    paymentDate: "கட்டண தேதி"
   },
-
   analytics: {
     analytics: "பகுப்பாய்வு",
     overview: "மேலோட்டம்",
@@ -299,9 +285,8 @@ const ta = {
     revenue: "வருவாய்",
     expenses: "செலவுகள்",
     profit: "லாபம்",
-    growth: "வளர்ச்சி",
+    growth: "வளர்ச்சி"
   },
-
   crops: {
     manageDesc: "உங்கள் பயிர்களை நிர்வகிக்கவும் மற்றும் முன்னேற்றத்தை கண்காணிக்கவும்",
     harvestedSold: "அறுவடை / விற்கப்பட்ட பயிர்கள்",
@@ -343,9 +328,8 @@ const ta = {
     other: "மற்றவை",
     noExpenses: "இன்னும் செலவுகள் பதிவு செய்யப்படவில்லை",
     totalCostSoFar: "இதுவரை மொத்த செலவு",
-    profitLoss: "லாபம் / நஷ்டம்",
+    profitLoss: "லாபம் / நஷ்டம்"
   },
-
   weather: {
     title: "வானிலை முன்னறிவிப்பு",
     subtitle: "உங்கள் விவசாய இடத்திற்கான நிகழ்நேர வானிலை",
@@ -382,102 +366,214 @@ const ta = {
     hot: "வெப்பம்",
     cold: "குளிர்",
     mild: "மிதமான",
-    mon: "திங்கள்", tue: "செவ்வாய்", wed: "புதன்", thu: "வியாழன்", fri: "வெள்ளி", sat: "சனி", sun: "ஞாயிறு",
-    today: "இன்று", tomorrow: "நாளை",
+    mon: "திங்கள்",
+    tue: "செவ்வாய்",
+    wed: "புதன்",
+    thu: "வியாழன்",
+    fri: "வெள்ளி",
+    sat: "சனி",
+    sun: "ஞாயிறு",
+    today: "இன்று",
+    tomorrow: "நாளை",
     rainChance: "மழை வாய்ப்பு",
-    high: "அதிகபட்சம்", low: "குறைந்தபட்சம்",
+    high: "அதிகபட்சம்",
+    low: "குறைந்தபட்சம்",
     noWeatherData: "வானிலை தரவு கிடைக்கவில்லை",
-    fetchingWeather: "வானிலை தரவை பெறுகிறோம்...",
+    fetchingWeather: "வானிலை தரவை பெறுகிறோம்..."
   },
-
   market: {
     title: "உரம் & வேளாண் பொருட்கள் வாங்கவும்",
     subtitle: "சரிபார்க்கப்பட்ட டீலர்களிடம் தரமான வேளாண் பொருட்கள் வாங்கவும்",
-    products: "பொருட்கள்", filters: "வடிப்பான்கள்", allCategories: "அனைத்து வகைகள்",
-    inStock: "கையிருப்பில் உள்ளது", outOfStock: "கையிருப்பில் இல்லை",
-    priceRange: "விலை வரம்பு", sortBy: "வரிசைப்படுத்து",
-    priceLowHigh: "விலை: குறைவு முதல் அதிகம்", priceHighLow: "விலை: அதிகம் முதல் குறைவு",
-    rating: "மதிப்பீடு", addToCart: "கார்ட்டில் சேர்", buyNow: "இப்போது வாங்கு",
-    quantity: "அளவு", unit: "அலகு",
-    perKg: "கிலோவுக்கு", perLitre: "லிட்டருக்கு", perBag: "மூட்டைக்கு", perUnit: "அலகுக்கு",
-    availableStock: "கிடைக்கும் கையிருப்பு", dealer: "டீலர்", brand: "பிராண்ட்",
-    composition: "கலவை", usageInstructions: "பயன்பாட்டு வழிமுறைகள்",
-    cart: "கார்ட்", cartEmpty: "உங்கள் கார்ட் காலியாக உள்ளது", checkout: "செக்அவுட்",
-    placeOrder: "ஆர்டர் செய்", orderSuccess: "ஆர்டர் வெற்றிகரமாக வழங்கப்பட்டது!",
+    products: "பொருட்கள்",
+    filters: "வடிப்பான்கள்",
+    allCategories: "அனைத்து வகைகள்",
+    inStock: "கையிருப்பில் உள்ளது",
+    outOfStock: "கையிருப்பில் இல்லை",
+    priceRange: "விலை வரம்பு",
+    sortBy: "வரிசைப்படுத்து",
+    priceLowHigh: "விலை: குறைவு முதல் அதிகம்",
+    priceHighLow: "விலை: அதிகம் முதல் குறைவு",
+    rating: "மதிப்பீடு",
+    addToCart: "கார்ட்டில் சேர்",
+    buyNow: "இப்போது வாங்கு",
+    quantity: "அளவு",
+    unit: "அலகு",
+    perKg: "கிலோவுக்கு",
+    perLitre: "லிட்டருக்கு",
+    perBag: "மூட்டைக்கு",
+    perUnit: "அலகுக்கு",
+    availableStock: "கிடைக்கும் கையிருப்பு",
+    dealer: "டீலர்",
+    brand: "பிராண்ட்",
+    composition: "கலவை",
+    usageInstructions: "பயன்பாட்டு வழிமுறைகள்",
+    cart: "கார்ட்",
+    cartEmpty: "உங்கள் கார்ட் காலியாக உள்ளது",
+    checkout: "செக்அவுட்",
+    placeOrder: "ஆர்டர் செய்",
+    orderSuccess: "ஆர்டர் வெற்றிகரமாக வழங்கப்பட்டது!",
     continueShopping: "ஷாப்பிங் தொடர்",
-    searchPlaceholder: "உரம், பூச்சிக்கொல்லி தேடு...", noProducts: "பொருட்கள் எதுவும் இல்லை",
-    urea: "யூரியா", dap: "DAP", mop: "MOP", npk: "NPK கலவை",
-    organicFertilizer: "இயற்கை உரம்", pesticide: "பூச்சிக்கொல்லி",
-    herbicide: "களைகொல்லி", fungicide: "பூஞ்சைக்கொல்லி", insecticide: "பூச்சிக்கொல்லி",
-    micronutrient: "நுண்ணூட்டம்", seeds: "விதைகள்", irrigation: "நீர்ப்பாசன உபகரணங்கள்",
-    kg: "கிலோ", litre: "லிட்டர்", bag: "மூட்டை", pieces: "துண்டுகள்",
+    searchPlaceholder: "உரம், பூச்சிக்கொல்லி தேடு...",
+    noProducts: "பொருட்கள் எதுவும் இல்லை",
+    urea: "யூரியா",
+    dap: "DAP",
+    mop: "MOP",
+    npk: "NPK கலவை",
+    organicFertilizer: "இயற்கை உரம்",
+    pesticide: "பூச்சிக்கொல்லி",
+    herbicide: "களைகொல்லி",
+    fungicide: "பூஞ்சைக்கொல்லி",
+    insecticide: "பூச்சிக்கொல்லி",
+    micronutrient: "நுண்ணூட்டம்",
+    seeds: "விதைகள்",
+    irrigation: "நீர்ப்பாசன உபகரணங்கள்",
+    kg: "கிலோ",
+    litre: "லிட்டர்",
+    bag: "மூட்டை",
+    pieces: "துண்டுகள்"
   },
-
   marketPrices: {
-    title: "சந்தை விலைகள்", subtitle: "வேளாண் பொருட்களின் நேரடி மண்டி விலைகள்",
-    commodity: "பொருள்", mandi: "மண்டி", minPrice: "குறைந்த விலை", maxPrice: "அதிகபட்ச விலை",
-    modalPrice: "மோடல் விலை", state: "மாநிலம்", district: "மாவட்டம்", variety: "வகை",
-    unit: "அலகு", date: "தேதி", pricePerQuintal: "குவிண்டாலுக்கு விலை (₹)",
-    searchCommodity: "பொருள் தேடு...", noData: "சந்தை தரவு இல்லை",
-    loading: "சமீபத்திய விலைகளை பெறுகிறோம்...", lastUpdated: "கடைசியாக புதுப்பிக்கப்பட்டது",
-    priceUp: "விலை உயர்ந்தது", priceDown: "விலை குறைந்தது", stable: "நிலையான",
-    perQuintal: "/ குவிண்டால்", quintal: "குவிண்டால்",
-    rice: "அரிசி", wheat: "கோதுமை", maize: "மக்காச்சோளம்", cotton: "பருத்தி",
-    groundnut: "கடலை", soybean: "சோயாபீன்", onion: "வெங்காயம்", tomato: "தக்காளி",
-    chilli: "மிளகாய்", turmeric: "மஞ்சள்", sugarcane: "கரும்பு",
-    jowar: "சோளம்", bajra: "கம்பு", ragi: "கேழ்வரகு", moong: "பாசிப்பருப்பு",
-    urad: "உளுந்தம்பருப்பு", chana: "கொண்டைக்கடலை",
+    title: "சந்தை விலைகள்",
+    subtitle: "வேளாண் பொருட்களின் நேரடி மண்டி விலைகள்",
+    commodity: "பொருள்",
+    mandi: "மண்டி",
+    minPrice: "குறைந்த விலை",
+    maxPrice: "அதிகபட்ச விலை",
+    modalPrice: "மோடல் விலை",
+    state: "மாநிலம்",
+    district: "மாவட்டம்",
+    variety: "வகை",
+    unit: "அலகு",
+    date: "தேதி",
+    pricePerQuintal: "குவிண்டாலுக்கு விலை (₹)",
+    searchCommodity: "பொருள் தேடு...",
+    noData: "சந்தை தரவு இல்லை",
+    loading: "சமீபத்திய விலைகளை பெறுகிறோம்...",
+    lastUpdated: "கடைசியாக புதுப்பிக்கப்பட்டது",
+    priceUp: "விலை உயர்ந்தது",
+    priceDown: "விலை குறைந்தது",
+    stable: "நிலையான",
+    perQuintal: "/ குவிண்டால்",
+    quintal: "குவிண்டால்",
+    rice: "அரிசி",
+    wheat: "கோதுமை",
+    maize: "மக்காச்சோளம்",
+    cotton: "பருத்தி",
+    groundnut: "கடலை",
+    soybean: "சோயாபீன்",
+    onion: "வெங்காயம்",
+    tomato: "தக்காளி",
+    chilli: "மிளகாய்",
+    turmeric: "மஞ்சள்",
+    sugarcane: "கரும்பு",
+    jowar: "சோளம்",
+    bajra: "கம்பு",
+    ragi: "கேழ்வரகு",
+    moong: "பாசிப்பருப்பு",
+    urad: "உளுந்தம்பருப்பு",
+    chana: "கொண்டைக்கடலை"
   },
-
   news: {
-    title: "வேளாண் செய்திகள்", subtitle: "விவசாய உலகிலிருந்து சமீபத்திய செய்திகள்",
-    readMore: "மேலும் படிக்கவும்", source: "ஆதாரம்", publishedOn: "வெளியிடப்பட்ட தேதி",
-    category: "வகை", noNews: "தற்போது செய்திகள் இல்லை",
+    title: "வேளாண் செய்திகள்",
+    subtitle: "விவசாய உலகிலிருந்து சமீபத்திய செய்திகள்",
+    readMore: "மேலும் படிக்கவும்",
+    source: "ஆதாரம்",
+    publishedOn: "வெளியிடப்பட்ட தேதி",
+    category: "வகை",
+    noNews: "தற்போது செய்திகள் இல்லை",
     fetchingNews: "சமீபத்திய செய்திகளை பெறுகிறோம்...",
-    trending: "ட்ரெண்டிங்", recent: "சமீபத்திய", all: "அனைத்து செய்திகள்",
-    governmentSchemes: "அரசு திட்டங்கள்", cropAdvisory: "பயிர் ஆலோசனை",
-    marketNews: "சந்தை செய்திகள்", weatherAlerts: "வானிலை எச்சரிக்கைகள்", technology: "தொழில்நுட்பம்",
+    trending: "ட்ரெண்டிங்",
+    recent: "சமீபத்திய",
+    all: "அனைத்து செய்திகள்",
+    governmentSchemes: "அரசு திட்டங்கள்",
+    cropAdvisory: "பயிர் ஆலோசனை",
+    marketNews: "சந்தை செய்திகள்",
+    weatherAlerts: "வானிலை எச்சரிக்கைகள்",
+    technology: "தொழில்நுட்பம்"
   },
-
   expenses: {
-    title: "என் செலவுகள்", subtitle: "விவசாய செலவுகளை கண்காணி மற்றும் நிர்வகி",
-    addExpense: "செலவு சேர்", editExpense: "செலவை திருத்து", deleteExpense: "செலவை நீக்கு",
-    totalExpenses: "மொத்த செலவுகள்", expenseHistory: "செலவு வரலாறு",
-    noExpenses: "இன்னும் செலவுகள் பதிவு செய்யப்படவில்லை", amount: "தொகை", date: "தேதி",
-    category: "வகை", notes: "குறிப்புகள்", cropName: "பயிர்", allCrops: "அனைத்து பயிர்கள்",
-    filterByCategory: "வகையால் வடி", filterByDate: "தேதியால் வடி",
-    thisMonth: "இந்த மாதம்", lastMonth: "கடந்த மாதம்", last3Months: "கடந்த 3 மாதங்கள்", thisYear: "இந்த ஆண்டு",
-    seeds: "விதைகள்", fertilizer: "உரம்", pesticide: "பூச்சிக்கொல்லி",
-    labour: "கூலி", irrigation: "நீர்ப்பாசனம்", equipment: "உபகரணங்கள்",
-    transport: "போக்குவரத்து", other: "மற்றவை",
-    perCrop: "பயிர்-வாரியான விவரங்கள்", expenseAdded: "செலவு வெற்றிகரமாக சேர்க்கப்பட்டது",
-    expenseDeleted: "செலவு நீக்கப்பட்டது",
+    title: "என் செலவுகள்",
+    subtitle: "விவசாய செலவுகளை கண்காணி மற்றும் நிர்வகி",
+    addExpense: "செலவு சேர்",
+    editExpense: "செலவை திருத்து",
+    deleteExpense: "செலவை நீக்கு",
+    totalExpenses: "மொத்த செலவுகள்",
+    expenseHistory: "செலவு வரலாறு",
+    noExpenses: "இன்னும் செலவுகள் பதிவு செய்யப்படவில்லை",
+    amount: "தொகை",
+    date: "தேதி",
+    category: "வகை",
+    notes: "குறிப்புகள்",
+    cropName: "பயிர்",
+    allCrops: "அனைத்து பயிர்கள்",
+    filterByCategory: "வகையால் வடி",
+    filterByDate: "தேதியால் வடி",
+    thisMonth: "இந்த மாதம்",
+    lastMonth: "கடந்த மாதம்",
+    last3Months: "கடந்த 3 மாதங்கள்",
+    thisYear: "இந்த ஆண்டு",
+    seeds: "விதைகள்",
+    fertilizer: "உரம்",
+    pesticide: "பூச்சிக்கொல்லி",
+    labour: "கூலி",
+    irrigation: "நீர்ப்பாசனம்",
+    equipment: "உபகரணங்கள்",
+    transport: "போக்குவரத்து",
+    other: "மற்றவை",
+    perCrop: "பயிர்-வாரியான விவரங்கள்",
+    expenseAdded: "செலவு வெற்றிகரமாக சேர்க்கப்பட்டது",
+    expenseDeleted: "செலவு நீக்கப்பட்டது"
   },
-
   profile: {
-    title: "என் சுயவிவரம்", personalDetails: "தனிப்பட்ட விவரங்கள்",
-    fullName: "முழு பெயர்", email: "மின்னஞ்சல்", phone: "தொலைபேசி", address: "முகவரி",
-    changePassword: "கடவுச்சொல்லை மாற்று", currentPassword: "தற்போதைய கடவுச்சொல்",
-    newPassword: "புதிய கடவுச்சொல்", confirmPassword: "கடவுச்சொல்லை உறுதிப்படுத்து",
-    updateProfile: "சுயவிவரத்தை புதுப்பி", profileUpdated: "சுயவிவரம் வெற்றிகரமாக புதுப்பிக்கப்பட்டது",
-    profilePhoto: "சுயவிவர புகைப்படம்", uploadPhoto: "புகைப்படம் பதிவேற்று",
-    accountSettings: "கணக்கு அமைப்புகள்", notifications: "அறிவிப்புகள்",
-    language: "மொழி", theme: "தீம்", deleteAccount: "கணக்கை நீக்கு",
-    farmerProfile: "விவசாயி சுயவிவரம்", landDetails: "நிலம் விவரங்கள்",
-    bankDetails: "வங்கி விவரங்கள்", aadhaarNumber: "ஆதார் எண்", panNumber: "PAN எண்",
+    title: "என் சுயவிவரம்",
+    personalDetails: "தனிப்பட்ட விவரங்கள்",
+    fullName: "முழு பெயர்",
+    email: "மின்னஞ்சல்",
+    phone: "தொலைபேசி",
+    address: "முகவரி",
+    changePassword: "கடவுச்சொல்லை மாற்று",
+    currentPassword: "தற்போதைய கடவுச்சொல்",
+    newPassword: "புதிய கடவுச்சொல்",
+    confirmPassword: "கடவுச்சொல்லை உறுதிப்படுத்து",
+    updateProfile: "சுயவிவரத்தை புதுப்பி",
+    profileUpdated: "சுயவிவரம் வெற்றிகரமாக புதுப்பிக்கப்பட்டது",
+    profilePhoto: "சுயவிவர புகைப்படம்",
+    uploadPhoto: "புகைப்படம் பதிவேற்று",
+    accountSettings: "கணக்கு அமைப்புகள்",
+    notifications: "அறிவிப்புகள்",
+    language: "மொழி",
+    theme: "தீம்",
+    deleteAccount: "கணக்கை நீக்கு",
+    farmerProfile: "விவசாயி சுயவிவரம்",
+    landDetails: "நிலம் விவரங்கள்",
+    bankDetails: "வங்கி விவரங்கள்",
+    aadhaarNumber: "ஆதார் எண்",
+    panNumber: "PAN எண்"
   },
-
   diagnosis: {
-    title: "பயிர் உடல்நல நோயறிதல்", subtitle: "நோய்களை கண்டறிய பயிர் புகைப்படம் பதிவேற்றவும்",
-    uploadImage: "பயிர் படம் பதிவேற்று", dragDrop: "இழுத்து விடுங்கள் அல்லது கிளிக் செய்யுங்கள்",
-    supportedFormats: "ஆதரிக்கப்படுபவை: JPG, PNG, WEBP", analyzing: "உங்கள் பயிரை பகுப்பாய்வு செய்கிறோம்...",
-    result: "நோயறிதல் முடிவு", disease: "கண்டறியப்பட்ட நோய்", confidence: "நம்பகத்தன்மை",
-    treatment: "பரிந்துரைக்கப்பட்ட சிகிச்சை", prevention: "தடுப்பு குறிப்புகள்",
-    healthy: "பயிர் ஆரோக்கியமாக தெரிகிறது!", noDisease: "நோய் எதுவும் கண்டறியப்படவில்லை",
-    tryAnother: "மற்றொரு படத்தை முயற்சி செய்", shareResult: "முடிவை பகிர்",
-    severity: "தீவிரம்", mild: "லேசான", moderate: "மிதமான", severe: "கடுமையான", critical: "மிகவும் தீவிரமான",
+    title: "பயிர் உடல்நல நோயறிதல்",
+    subtitle: "நோய்களை கண்டறிய பயிர் புகைப்படம் பதிவேற்றவும்",
+    uploadImage: "பயிர் படம் பதிவேற்று",
+    dragDrop: "இழுத்து விடுங்கள் அல்லது கிளிக் செய்யுங்கள்",
+    supportedFormats: "ஆதரிக்கப்படுபவை: JPG, PNG, WEBP",
+    analyzing: "உங்கள் பயிரை பகுப்பாய்வு செய்கிறோம்...",
+    result: "நோயறிதல் முடிவு",
+    disease: "கண்டறியப்பட்ட நோய்",
+    confidence: "நம்பகத்தன்மை",
+    treatment: "பரிந்துரைக்கப்பட்ட சிகிச்சை",
+    prevention: "தடுப்பு குறிப்புகள்",
+    healthy: "பயிர் ஆரோக்கியமாக தெரிகிறது!",
+    noDisease: "நோய் எதுவும் கண்டறியப்படவில்லை",
+    tryAnother: "மற்றொரு படத்தை முயற்சி செய்",
+    shareResult: "முடிவை பகிர்",
+    severity: "தீவிரம்",
+    mild: "லேசான",
+    moderate: "மிதமான",
+    severe: "கடுமையான",
+    critical: "மிகவும் தீவிரமான",
     apiError: "AI சேவை கிடைக்கவில்லை. API விசையை சரிபார்க்கவும்.",
-    selectCrop: "பயிர் வகையை தேர்ந்தெடு (விரும்பினால்)", diagnoseBtn: "என் பயிரை நோயறிதல் செய்",
+    selectCrop: "பயிர் வகையை தேர்ந்தெடு (விரும்பினால்)",
+    diagnoseBtn: "என் பயிரை நோயறிதல் செய்"
   },
   voice: {
     title: "குரல் உதவியாளர்",
@@ -496,9 +592,8 @@ const ta = {
     checkWeather: "வானிலை",
     myExpenses: "என் செலவுகள்",
     openCrops: "பயிர்களை திற",
-    priceOf: "விலை",
+    priceOf: "விலை"
   },
-
   cropDetail: {
     overview: "கண்ணோட்டம்",
     expenses: "செலவுகள்",
@@ -602,9 +697,8 @@ const ta = {
     machinery: "இயந்திரங்கள்",
     irrigation: "நீர்ப்பாசனம்",
     logistics: "போக்குவரத்து",
-    miscellaneous: "இதர",
+    miscellaneous: "இதர"
   },
-
   marketPage: {
     title: "சந்தை",
     searchPlaceholder: "பெயர், பிராண்ட் மூலம் தேடுங்கள் (எ.கா., DAP, யூரியா, IFFCO)...",
@@ -633,8 +727,12 @@ const ta = {
     orderDetails: "ஆர்டர் விவரங்கள்",
     emptyCart: "உங்கள் கூடை காலியாக உள்ளது",
     continueShopping: "தொடர்ந்து ஷாப்பிங் செய்",
+    pack: "பேக்",
+    inCart: "கார்ட்டில் உள்ளது",
+    adjustFilters: "உங்கள் தேடல் அல்லது வடிப்பான்களை மாற்றி முயற்சிக்கவும்",
+    fertilizer: "உரம்",
+    pesticide: "பூச்சிக்கொல்லி"
   },
-
   marketPricesAdvice: {
     pricesIncreasing: "விலைகள் அதிகரிக்கின்றன. சிறந்த விலைக்கு காத்திருக்கலாம்.",
     pricesDeclining: "விலைகள் குறைகின்றன. விற்பதற்கு முன் MSP ஐ சரிபார்க்கவும்.",
@@ -645,9 +743,8 @@ const ta = {
     perQuintal: "/ குவின்டால்",
     mandi: "மண்டி",
     lastUpdated: "கடைசியாக புதுப்பிக்கப்பட்டது",
-    recentlyUpdated: "சமீபத்தில் புதுப்பிக்கப்பட்டது",
+    recentlyUpdated: "சமீபத்தில் புதுப்பிக்கப்பட்டது"
   },
-
   communityHub: {
     title: "சமூக மையம்",
     subtitle: "சக விவசாயிகளுடன் இணையுங்கள்",
@@ -667,9 +764,8 @@ const ta = {
     online: "ஆன்லைனில்",
     location: "இடம்",
     p2p: "நேரடி",
-    group: "குழு",
+    group: "குழு"
   },
-
   chatbotQuick: {
     farmerQ1: "எனது மொத்த பயிர் செலவுகள் எவ்வளவு?",
     farmerQ2: "எனது அறுவடை சுருக்கத்தை காட்டு",
@@ -682,8 +778,8 @@ const ta = {
     manufacturerQ3: "நான் எவ்வளவு விற்றுள்ளேன்?",
     customerQ1: "என்ன தயாரிப்புகள் கிடைக்கின்றன?",
     customerQ2: "எனது ஆர்டர்களை கண்காணிக்கவும்",
-    customerQ3: "சிறந்த இயற்கை உரங்கள்?",
-  },
+    customerQ3: "சிறந்த இயற்கை உரங்கள்?"
+  }
 };
 
 export default ta;

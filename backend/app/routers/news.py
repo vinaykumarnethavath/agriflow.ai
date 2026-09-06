@@ -232,11 +232,36 @@ async def get_news(
     Returns agricultural news from the past 5 days.
     Uses NewsAPI when API key is configured, otherwise returns mock data.
     Only agriculture-related news is fetched.
+    Automatically translates article titles and summaries if lang != 'en'.
     """
     api_key = os.getenv("NEWS_API_KEY", "")
+    articles = None
     if api_key:
-        result = await _fetch_news_api(api_key=api_key, query=q, lang=lang)
-        if result is not None:
-            return result
+        articles = await _fetch_news_api(api_key=api_key, query=q, lang=lang)
+    
+    if articles is None:
+        articles = _get_mock_news()
 
-    return _get_mock_news()
+    if lang and lang != "en" and articles:
+        try:
+            from .translate import translate_texts_batch
+            titles = [a.get("title", "") for a in articles]
+            summaries = [a.get("summary", "") for a in articles]
+            
+            all_texts = titles + summaries
+            translated_all = await translate_texts_batch(all_texts, target_lang=lang)
+            
+            n = len(articles)
+            translated_titles = translated_all[:n]
+            translated_summaries = translated_all[n:]
+
+            for idx, article in enumerate(articles):
+                if translated_titles[idx]:
+                    article["title"] = translated_titles[idx]
+                if translated_summaries[idx]:
+                    article["summary"] = translated_summaries[idx]
+        except Exception as e:
+            print(f"[news] Auto-translation error: {e}")
+
+    return articles
+

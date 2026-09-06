@@ -4,9 +4,10 @@ import random
 router = APIRouter(prefix="/market", tags=["market"])
 
 @router.get("/prices")
-async def get_market_prices():
+async def get_market_prices(lang: str = "en"):
     """
     Returns mock market prices for common crops with multiple nearby markets.
+    Translates crop names and mandi names if lang != 'en'.
     """
     crops = [
         {"name": "Wheat", "base_price": 2200, "msp": 2125},
@@ -62,4 +63,29 @@ async def get_market_prices():
             "markets": markets
         })
         
+    if lang and lang != "en" and market_data:
+        try:
+            from .translate import translate_texts_batch
+            crop_names = [item["crop_name"] for item in market_data]
+            unique_mandi_names = list({loc["name"] for loc in market_locations})
+
+            all_to_translate = crop_names + unique_mandi_names
+            translated = await translate_texts_batch(all_to_translate, target_lang=lang)
+
+            crop_translated = translated[:len(crop_names)]
+            mandi_translated = translated[len(crop_names):]
+            mandi_map = dict(zip(unique_mandi_names, mandi_translated))
+
+            for idx, item in enumerate(market_data):
+                if crop_translated[idx]:
+                    item["crop_name"] = crop_translated[idx]
+                if item["nearest_mandi"] in mandi_map:
+                    item["nearest_mandi"] = mandi_map[item["nearest_mandi"]]
+                for m in item["markets"]:
+                    if m["market_name"] in mandi_map:
+                        m["market_name"] = mandi_map[m["market_name"]]
+        except Exception as e:
+            print(f"[market_prices] Auto-translation error: {e}")
+
     return market_data
+

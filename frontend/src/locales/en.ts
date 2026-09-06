@@ -774,6 +774,11 @@ const en = {
     orderDetails: "Order Details",
     emptyCart: "Your cart is empty",
     continueShopping: "Continue Shopping",
+    pack: "pack",
+    inCart: "In Cart",
+    adjustFilters: "Try adjusting your search or filters",
+    fertilizer: "Fertilizer",
+    pesticide: "Pesticide",
   },
 
   // ── Market Prices Advice ──────────────────────────────────────────────

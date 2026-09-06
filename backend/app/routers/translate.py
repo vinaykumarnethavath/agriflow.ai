@@ -70,7 +70,7 @@ def _set_cached(text: str, source: str, target: str, translation: str):
 async def _translate_single_gemini(text: str, source_lang: str, target_lang: str, api_key: str) -> str:
     """Translate a single text using Google Gemini 1.5 Flash."""
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-3.5-flash-lite")
     
     src_name = SUPPORTED_LANGUAGES.get(source_lang, "English")
     tgt_name = SUPPORTED_LANGUAGES.get(target_lang, "Hindi")
@@ -107,6 +107,60 @@ async def _translate_batch_gemini(texts: list[str], source_lang: str, target_lan
     tasks = [translate_with_limit(t) for t in texts]
     results = await asyncio.gather(*tasks)
     return list(results)
+
+
+async def translate_text(text: str, target_lang: str, source_lang: str = "en") -> str:
+    """Translate a single string into target_lang, using cache where possible."""
+    if not text or not text.strip() or target_lang == source_lang or target_lang not in SUPPORTED_LANGUAGES:
+        return text
+    cached = _get_cached(text, source_lang, target_lang)
+    if cached:
+        return cached
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return text
+    try:
+        translated = await _translate_single_gemini(text, source_lang, target_lang, api_key)
+        _set_cached(text, source_lang, target_lang, translated)
+        return translated
+    except Exception as e:
+        print(f"[translate_text] Error: {e}")
+        return text
+
+
+async def translate_texts_batch(texts: list[str], target_lang: str, source_lang: str = "en") -> list[str]:
+    """Translate a list of strings into target_lang using cache + Gemini batch API."""
+    if not texts or target_lang == source_lang or target_lang not in SUPPORTED_LANGUAGES:
+        return texts
+
+    results: list[Optional[str]] = [None] * len(texts)
+    uncached_indices: list[int] = []
+    uncached_texts: list[str] = []
+
+    for i, t in enumerate(texts):
+        if not t or not t.strip():
+            results[i] = t
+            continue
+        cached = _get_cached(t, source_lang, target_lang)
+        if cached is not None:
+            results[i] = cached
+        else:
+            uncached_indices.append(i)
+            uncached_texts.append(t)
+
+    if uncached_texts:
+        try:
+            translations = await _translate_batch_gemini(uncached_texts, source_lang, target_lang)
+            for idx, (orig, trans) in enumerate(zip(uncached_texts, translations)):
+                _set_cached(orig, source_lang, target_lang, trans)
+                results[uncached_indices[idx]] = trans
+        except Exception as e:
+            print(f"[translate_texts_batch] Error: {e}")
+            for idx, orig in zip(uncached_indices, uncached_texts):
+                results[idx] = orig
+
+    return [r if r is not None else orig for r, orig in zip(results, texts)]
+
 
 
 # ── API Endpoints ─────────────────────────────────────────────────────────────

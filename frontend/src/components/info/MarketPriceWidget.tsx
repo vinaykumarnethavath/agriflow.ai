@@ -94,7 +94,7 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                             {/* Crop Header */}
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                    <h4 className="font-bold text-foreground">{crop.crop_name}</h4>
+                                    <h4 className="font-bold text-foreground"><T>{crop.crop_name}</T></h4>
                                     {crop.msp_comparison === 'above' && (
                                         <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200">
                                             {t('marketPrices.priceUp')}
@@ -134,7 +134,7 @@ export default function MarketPriceWidget({ filterCrops }: { filterCrops?: strin
                                                 key={mIdx}
                                                 className="flex-shrink-0 bg-muted/50 border border-border rounded-lg px-3 py-2 min-w-[140px] hover:border-green-200 transition-colors"
                                             >
-                                                <p className="text-xs font-bold text-muted-foreground truncate">{market.market_name}</p>
+                                                <p className="text-xs font-bold text-muted-foreground truncate"><T>{market.market_name}</T></p>
                                                 <p className="text-sm font-bold text-foreground mt-0.5">₹{market.price.toLocaleString()}</p>
                                                 <div className="flex items-center justify-between mt-1">
                                                     <span className="text-[10px] text-muted-foreground">{market.distance_km} km</span>

@@ -230,9 +230,10 @@ async def geocode_city(name: str = Query(..., min_length=2)):
 
 
 @router.get("/forecast")
-async def get_forecast(lat: float = 17.385, lon: float = 78.4867):
+async def get_forecast(lat: float = 17.385, lon: float = 78.4867, lang: str = "en"):
     """
     Fetch comprehensive live weather & multi-depth soil moisture data from Open-Meteo Forecast API.
+    Translates recommendations and advisories if lang != 'en'.
     """
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -288,6 +289,24 @@ async def get_forecast(lat: float = 17.385, lon: float = 78.4867):
 
         recommendations = _generate_recommendations(current)
 
+        if lang and lang != "en" and recommendations:
+            try:
+                from .translate import translate_texts_batch
+                titles = [r.get("title", "") for r in recommendations]
+                texts = [r.get("text", "") for r in recommendations]
+                all_to_trans = titles + texts
+                translated = await translate_texts_batch(all_to_trans, target_lang=lang)
+                n = len(recommendations)
+                translated_titles = translated[:n]
+                translated_texts = translated[n:]
+                for idx, r in enumerate(recommendations):
+                    if translated_titles[idx]:
+                        r["title"] = translated_titles[idx]
+                    if translated_texts[idx]:
+                        r["text"] = translated_texts[idx]
+            except Exception as e:
+                print(f"[weather] Recommendation auto-translation error: {e}")
+
         return {
             "latitude": raw.get("latitude", lat),
             "longitude": raw.get("longitude", lon),
@@ -303,6 +322,7 @@ async def get_forecast(lat: float = 17.385, lon: float = 78.4867):
     except Exception as e:
         print(f"Weather forecast fetch error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch forecast: {str(e)}")
+
 
 
 @router.get("/historical")
@@ -359,13 +379,14 @@ async def get_historical(lat: float, lon: float, date: str):
 
 
 @router.get("/")
-async def get_weather_legacy(lat: float = 17.385, lon: float = 78.4867):
+async def get_weather_legacy(lat: float = 17.385, lon: float = 78.4867, lang: str = "en"):
     """
     Backward-compatible legacy endpoint for dashboard widgets.
     Uses Open-Meteo live forecast data.
+    Auto-translates condition, alerts, and advice when lang != 'en'.
     """
     try:
-        forecast_data = await get_forecast(lat=lat, lon=lon)
+        forecast_data = await get_forecast(lat=lat, lon=lon, lang=lang)
         current = forecast_data.get("current", {})
         daily = forecast_data.get("daily", [])
         recommendations = forecast_data.get("recommendations", [])
@@ -412,6 +433,24 @@ async def get_weather_legacy(lat: float = 17.385, lon: float = 78.4867):
         ]
         advice = [r.get("text", "") for r in recommendations if r.get("type") in ["success", "info"]]
 
+        if lang and lang != "en":
+            try:
+                from .translate import translate_texts_batch
+                texts_to_trans = [condition] + [a["title"] for a in alerts] + [a["message"] for a in alerts] + advice
+                if texts_to_trans:
+                    translated = await translate_texts_batch(texts_to_trans, target_lang=lang)
+                    condition = translated[0]
+                    offset = 1
+                    n_alerts = len(alerts)
+                    for idx, a in enumerate(alerts):
+                        a["title"] = translated[offset + idx]
+                        a["message"] = translated[offset + n_alerts + idx]
+                    offset += 2 * n_alerts
+                    for idx in range(len(advice)):
+                        advice[idx] = translated[offset + idx]
+            except Exception as e:
+                print(f"[weather] Legacy weather auto-translation error: {e}")
+
         return {
             "location": f"{lat:.2f}°, {lon:.2f}°",
             "temperature": round(temp, 1),
@@ -440,3 +479,4 @@ async def get_weather_legacy(lat: float = 17.385, lon: float = 78.4867):
             "advice": ["Optimal weather conditions for farming."],
             "source": "fallback"
         }
+

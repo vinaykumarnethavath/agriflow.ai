@@ -332,11 +332,13 @@ async def start_p2p_chat(
 @router.get("/channels/{channel_id}/messages", response_model=List[MessageRead])
 async def get_messages(
     channel_id: int,
+    lang: Optional[str] = Query("en"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
     """
     Get messages for a channel. Verifies membership first.
+    Auto-translates message text if lang != 'en'.
     """
     stmt_mem = select(ChannelMember).where(
         and_(ChannelMember.channel_id == channel_id, ChannelMember.user_id == current_user.id)
@@ -349,7 +351,7 @@ async def get_messages(
     msg_res = await db.execute(stmt_msg)
     messages = msg_res.all()
 
-    return [
+    msg_reads = [
         MessageRead(
             id=m.ChatMessage.id,
             channel_id=m.ChatMessage.channel_id,
@@ -362,6 +364,20 @@ async def get_messages(
             created_at=m.ChatMessage.created_at
         ) for m in messages
     ]
+
+    if lang and lang != "en" and msg_reads:
+        try:
+            from .translate import translate_texts_batch
+            texts = [m.message_text for m in msg_reads]
+            translated = await translate_texts_batch(texts, target_lang=lang)
+            for idx, m in enumerate(msg_reads):
+                if translated[idx]:
+                    m.message_text = translated[idx]
+        except Exception as e:
+            print(f"[chat] Auto-translate messages error: {e}")
+
+    return msg_reads
+
 
 @router.post("/channels/{channel_id}/messages", response_model=MessageRead)
 async def send_message(

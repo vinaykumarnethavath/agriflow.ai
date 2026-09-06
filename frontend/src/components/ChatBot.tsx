@@ -139,7 +139,7 @@ function loadSessions(role: string): { sessions: ChatSession[]; activeId: string
 export const ChatBot = () => {
     // ----- Get current user role for isolation -----
     const { user } = useAuth();
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const userRole = (user as any)?.role || "farmer";
 
     // ----- Core state -----
@@ -158,7 +158,6 @@ export const ChatBot = () => {
     // ----- Derived -----
     const activeSession = sessions.find(s => s.id === activeSessionId);
     const messages = activeSession?.messages ?? [];
-    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
     // ----- Translation hooks -----
     const quickQuestions = QUICK_QUESTIONS_BY_ROLE[userRole] || QUICK_QUESTIONS_BY_ROLE.farmer;
@@ -273,7 +272,7 @@ export const ChatBot = () => {
         setIsLoading(true);
 
         try {
-            const response = await sendChatMessage(text);
+            const response = await sendChatMessage(text, locale);
             const botMsg: Message = {
                 id: generateId(),
                 text: response.answer,
@@ -290,7 +289,7 @@ export const ChatBot = () => {
             console.error("Chat error:", error);
             const errorMsg: Message = {
                 id: generateId(),
-                text: "Sorry, I encountered an error connecting to my knowledge base. Please try again.",
+                text: t('chatbot.errorConnecting') || "Sorry, I encountered an error connecting to my knowledge base. Please try again.",
                 sender: "bot",
                 timestamp: new Date(),
             };
@@ -302,7 +301,9 @@ export const ChatBot = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [isLoading, updateActiveSession]);
+    }, [isLoading, locale, updateActiveSession, t]);
+
+
 
     // ----- Rewrite message -----
     const handleRewriteMessage = useCallback((msgId: string) => {
@@ -379,12 +380,12 @@ export const ChatBot = () => {
         const now = new Date();
         const diffMs = now.getTime() - d.getTime();
         const diffMins = Math.floor(diffMs / 60000);
-        if (diffMins < 1) return "Just now";
-        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffMins < 1) return <T>Just now</T>;
+        if (diffMins < 60) return <><T>{`${diffMins}`}</T><T>m ago</T></>;
         const diffHours = Math.floor(diffMins / 60);
-        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffHours < 24) return <><T>{`${diffHours}`}</T><T>h ago</T></>;
         const diffDays = Math.floor(diffHours / 24);
-        if (diffDays < 7) return `${diffDays}d ago`;
+        if (diffDays < 7) return <><T>{`${diffDays}`}</T><T>d ago</T></>;
         return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
     };
 
@@ -398,7 +399,7 @@ export const ChatBot = () => {
                 <button
                     onClick={() => setIsOpen(true)}
                     className="fixed bottom-6 right-6 w-14 h-14 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 z-50 group animate-bounce-gentle"
-                    aria-label="Open Chat Assistant"
+                    aria-label={t('chatbot.openAssistant') || "Open Chat Assistant"}
                     id="chat-open-btn"
                 >
                     <MessageSquare className="w-6 h-6" />
@@ -419,7 +420,7 @@ export const ChatBot = () => {
                         <button
                             onClick={() => setShowSidebar(!showSidebar)}
                             className="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center backdrop-blur-sm transition-all"
-                            title="Chat History"
+                            title={t('chatbot.chatHistory')}
                             id="chat-history-btn"
                         >
                             {showSidebar ? <ChevronLeft className="w-4 h-4" /> : <History className="w-4 h-4" />}
@@ -437,7 +438,7 @@ export const ChatBot = () => {
                         <button
                             onClick={handleNewChat}
                             className="w-8 h-8 rounded-lg hover:bg-white/15 flex items-center justify-center transition-all"
-                            title="New Chat"
+                            title={t('chatbot.newChat')}
                             id="chat-new-btn"
                         >
                             <Plus className="w-4 h-4" />
@@ -445,7 +446,7 @@ export const ChatBot = () => {
                         <button
                             onClick={handleRefreshChat}
                             className="w-8 h-8 rounded-lg hover:bg-white/15 flex items-center justify-center transition-all"
-                            title="Clear Chat"
+                            title={t('chatbot.clearHistory')}
                             id="chat-refresh-btn"
                         >
                             <RotateCcw className="w-4 h-4" />
@@ -500,7 +501,7 @@ export const ChatBot = () => {
                                                 <p className="text-[10px] text-slate-400 dark:text-muted-foreground mt-0.5">
                                                     {formatDate(session.updatedAt)}
                                                     {" · "}
-                                                    {session.messages.filter(m => m.sender === "user").length} msgs
+                                                    {session.messages.filter(m => m.sender === "user").length} <T>msgs</T>
                                                 </p>
                                             </div>
 
@@ -509,7 +510,7 @@ export const ChatBot = () => {
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleDeleteSession(session.id); }}
                                                     className="shrink-0 w-7 h-7 rounded-md bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all animate-pulse"
-                                                    title="Confirm Delete"
+                                                    title={t('common.confirm')}
                                                 >
                                                     <Check className="w-3.5 h-3.5" />
                                                 </button>
@@ -517,7 +518,7 @@ export const ChatBot = () => {
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(session.id); setTimeout(() => setDeleteConfirmId(null), 3000); }}
                                                     className="shrink-0 w-7 h-7 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 flex items-center justify-center transition-all"
-                                                    title="Delete Chat"
+                                                    title={t('common.delete')}
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
@@ -558,7 +559,7 @@ export const ChatBot = () => {
 
                         {/* Message List */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 dark:bg-slate-900/80 custom-scrollbar">
-                            {messages.map((msg) => (
+                            {messages.map((msg, msgIndex) => (
                                 <div
                                     key={msg.id}
                                     className={cn(
@@ -600,7 +601,7 @@ export const ChatBot = () => {
                                                     <button
                                                         onClick={() => handleRewriteMessage(msg.id)}
                                                         className="absolute -bottom-2 -left-2 w-6 h-6 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-md flex items-center justify-center opacity-0 group-hover/msg:opacity-100 hover:bg-green-50 dark:hover:bg-green-900/30 hover:border-green-300 dark:hover:border-green-600 transition-all scale-90 group-hover/msg:scale-100"
-                                                        title="Rewrite this message"
+                                                        title={t('common.edit') || "Rewrite this message"}
                                                     >
                                                         <Edit2 className="w-3 h-3 text-muted-foreground hover:text-green-600 dark:hover:text-green-400" />
                                                     </button>

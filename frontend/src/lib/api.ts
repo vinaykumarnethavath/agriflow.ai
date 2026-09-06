@@ -1026,10 +1026,11 @@ export interface ChatResponse {
     data_points?: any;
 }
 
-export const sendChatMessage = async (question: string): Promise<ChatResponse> => {
-    const response = await api.post<ChatResponse>('/rag/chat', { question });
+export const sendChatMessage = async (question: string, lang: string = "en"): Promise<ChatResponse> => {
+    const response = await api.post<ChatResponse>('/rag/chat', { question, lang });
     return response.data;
 };
+
 
 // --- AI Crop Health Diagnosis API ---
 

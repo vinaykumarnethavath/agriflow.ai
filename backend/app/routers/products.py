@@ -217,6 +217,7 @@ async def bulk_receive_products(
 async def read_products(
     category: str = None,
     shop_id: int = None,
+    lang: str = "en",
     session: AsyncSession = Depends(get_session)
 ):
     """Get all ACTIVE products visible to customers."""
@@ -233,6 +234,26 @@ async def read_products(
         p = ProductWithSeller.from_orm(product)
         p.seller_name = seller_name
         products.append(p)
+
+    if lang and lang != "en" and products:
+        try:
+            from .translate import translate_texts_batch
+            names = [p.name for p in products]
+            descriptions = [p.description or "" for p in products]
+            all_texts = names + descriptions
+            translated = await translate_texts_batch(all_texts, target_lang=lang)
+            
+            n = len(products)
+            translated_names = translated[:n]
+            translated_descs = translated[n:]
+            for idx, p in enumerate(products):
+                if translated_names[idx]:
+                    p.name = translated_names[idx]
+                if translated_descs[idx]:
+                    p.description = translated_descs[idx]
+        except Exception as e:
+            print(f"[products] Auto-translation error: {e}")
+
     return products
     
 @router.get("/shops", response_model=list)
@@ -246,6 +267,7 @@ async def get_shops(session: AsyncSession = Depends(get_session)):
 @router.get("/{product_id}", response_model=ProductWithSeller)
 async def read_product(
     product_id: int,
+    lang: str = "en",
     session: AsyncSession = Depends(get_session)
 ):
     product = await session.get(Product, product_id)
@@ -254,7 +276,21 @@ async def read_product(
     seller = await session.get(User, product.user_id)
     p = ProductWithSeller.from_orm(product)
     p.seller_name = seller.full_name if seller else "Unknown"
+
+    if lang and lang != "en":
+        try:
+            from .translate import translate_texts_batch
+            texts = [p.name, p.description or ""]
+            translated = await translate_texts_batch(texts, target_lang=lang)
+            if translated[0]:
+                p.name = translated[0]
+            if translated[1]:
+                p.description = translated[1]
+        except Exception as e:
+            print(f"[products] Single product auto-translation error: {e}")
+
     return p
+
 
 @router.get("/my/all", response_model=List[ProductRead])
 async def read_my_products(

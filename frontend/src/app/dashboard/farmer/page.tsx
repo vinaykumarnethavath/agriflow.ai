@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import api, { Crop, WeatherData } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { T } from "@/components/TranslateText";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -1026,7 +1027,7 @@ export default function FarmerDashboard() {
                                 size="sm"
                                 className="border-green-200 text-green-700 hover:bg-green-50"
                             >
-                                <PenSquare className="h-3 w-3 mr-1" /> Edit Land
+                                <PenSquare className="h-3 w-3 mr-1" /> {t('farmer.editLand')}
                             </Button>
                         </div>
                     </div>
@@ -1123,7 +1124,7 @@ export default function FarmerDashboard() {
                                 <div key={idx} className="flex items-center gap-3 bg-card p-3 rounded-lg border border-amber-100 dark:border-amber-800">
                                     <span className="text-lg">{activity.type === 'harvest' ? '🌾' : activity.type === 'fertilizer' ? '💧' : '📋'}</span>
                                     <div className="flex-1">
-                                        <p className="text-sm font-medium text-foreground">{activity.text}</p>
+                                        <p className="text-sm font-medium text-foreground"><T>{activity.text}</T></p>
                                     </div>
                                     <span className="text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 px-2 py-1 rounded-full">
                                         {activity.daysLeft}d
@@ -1199,7 +1200,7 @@ export default function FarmerDashboard() {
                                                                                         crop.name.toLowerCase().includes('onion') ? '🧅' :
                                                                                             crop.name.toLowerCase().includes('potato') ? '🥔' :
                                                                                                 '🌿'}</span>
-                                                    {crop.name}
+                                                    <T>{crop.name}</T>
                                                 </h3>
                                                 <p className="text-xs text-muted-foreground">{t('farmer.sownOn')}: {new Date(crop.sowing_date).toLocaleDateString()} • {crop.area} {t('farmer.acres')}</p>
                                             </div>

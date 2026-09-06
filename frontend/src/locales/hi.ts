@@ -1,7 +1,3 @@
-/**
- * Hindi (हिन्दी) — Translation dictionary for AgriFlow
- */
-
 const hi = {
   common: {
     save: "सेव करें",
@@ -42,9 +38,8 @@ const hi = {
     profile: "प्रोफ़ाइल",
     welcome: "स्वागत है",
     language: "भाषा",
-    selectLanguage: "भाषा चुनें",
+    selectLanguage: "भाषा चुनें"
   },
-
   status: {
     active: "सक्रिय",
     inactive: "निष्क्रिय",
@@ -61,9 +56,8 @@ const hi = {
     draft: "ड्राफ्ट",
     growing: "बढ़ रहा है",
     harvested: "कटाई हो गई",
-    sold: "बिक गया",
+    sold: "बिक गया"
   },
-
   auth: {
     login: "लॉग इन",
     register: "रजिस्टर",
@@ -95,9 +89,8 @@ const hi = {
     sendOtp: "OTP भेजें",
     verifyOtp: "OTP सत्यापित करें",
     enterOtp: "OTP दर्ज करें",
-    supplyChainPlatform: "आपूर्ति श्रृंखला मंच",
+    supplyChainPlatform: "आपूर्ति श्रृंखला मंच"
   },
-
   sidebar: {
     dashboard: "डैशबोर्ड",
     myCrops: "मेरी फसलें",
@@ -118,9 +111,8 @@ const hi = {
     sales: "बिक्री",
     home: "होम",
     marketplace: "बाज़ार",
-    cart: "कार्ट",
+    cart: "कार्ट"
   },
-
   farmer: {
     welcomeMessage: "आपके खेत की एक नज़र",
     myCrops: "मेरी फसलें",
@@ -184,7 +176,7 @@ const hi = {
     bankDetails: "बैंक विवरण",
     bankName: "बैंक",
     accountNumber: "खाता",
-    ifscCode: "IFSC",
+    ifscCode: "आईएफएससी",
     aadhaarLast4: "आधार (अंतिम 4)",
     notes: "टिप्पणियाँ",
     status: "स्थिति",
@@ -198,10 +190,8 @@ const hi = {
     bankInfo: "बैंक जानकारी",
     aiWeatherAlert: "मौसम चेतावनी",
     healthy: "स्वस्थ",
-    monitor: "निगरानी करें",
+    monitor: "निगरानी करें"
   },
-
-
   shop: {
     shopDashboard: "दुकान डैशबोर्ड",
     totalRevenue: "कुल राजस्व",
@@ -228,8 +218,8 @@ const hi = {
     orderValue: "ऑर्डर मूल्य",
     customer: "ग्राहक",
     orderDate: "ऑर्डर तारीख",
+    discovery: "खोज और अंतर्दृष्टि"
   },
-
   customer: {
     welcomeSubtitle: "खेत से सीधे आपके दरवाज़े तक। आज ही स्थानीय उपज खोजें।",
     shopNow: "अभी खरीदें",
@@ -246,9 +236,8 @@ const hi = {
     addToCart: "कार्ट में जोड़ें",
     checkout: "चेकआउट",
     orderHistory: "ऑर्डर इतिहास",
-    trackOrder: "ऑर्डर ट्रैक करें",
+    trackOrder: "ऑर्डर ट्रैक करें"
   },
-
   manufacturer: {
     manufacturerDashboard: "मिल डैशबोर्ड",
     totalPurchases: "कुल खरीद",
@@ -263,9 +252,8 @@ const hi = {
     supplier: "आपूर्तिकर्ता",
     materialType: "सामग्री प्रकार",
     unitPrice: "इकाई मूल्य",
-    totalCost: "कुल लागत",
+    totalCost: "कुल लागत"
   },
-
   chatbot: {
     title: "AgriFlow सहायक",
     placeholder: "अपना संदेश टाइप करें...",
@@ -277,9 +265,8 @@ const hi = {
     welcomeShop: "नमस्ते! मैं आपका दुकान सहायक हूँ। मैं आपकी इन्वेंटरी, ऑर्डर, बिक्री विश्लेषण, खर्चों और व्यापार अंतर्दृष्टि में मदद कर सकता हूँ।",
     welcomeManufacturer: "नमस्ते! मैं आपका मिल सहायक हूँ। मैं आपकी खरीद, उत्पादन बैच, बिक्री और निर्माण कार्यों में मदद कर सकता हूँ।",
     welcomeCustomer: "नमस्ते! मैं आपका AgriFlow सहायक हूँ। मैं उत्पाद खोजने, ऑर्डर ट्रैक करने और कृषि संबंधी प्रश्नों में मदद कर सकता हूँ।",
-    quickQuestions: "त्वरित प्रश्न",
+    quickQuestions: "त्वरित प्रश्न"
   },
-
   payments: {
     payment: "भुगतान",
     payNow: "अभी भुगतान करें",
@@ -287,9 +274,8 @@ const hi = {
     paymentMethod: "भुगतान विधि",
     transactionId: "लेनदेन आईडी",
     paymentStatus: "भुगतान स्थिति",
-    paymentDate: "भुगतान तारीख",
+    paymentDate: "भुगतान तारीख"
   },
-
   analytics: {
     analytics: "विश्लेषण",
     overview: "अवलोकन",
@@ -299,9 +285,8 @@ const hi = {
     revenue: "राजस्व",
     expenses: "खर्चे",
     profit: "लाभ",
-    growth: "वृद्धि",
+    growth: "वृद्धि"
   },
-
   crops: {
     manageDesc: "अपनी सभी फसलें प्रबंधित करें और प्रगति ट्रैक करें",
     harvestedSold: "कटाई / बेची गई फसलें",
@@ -343,9 +328,8 @@ const hi = {
     other: "अन्य",
     noExpenses: "अभी तक कोई खर्च दर्ज नहीं",
     totalCostSoFar: "अब तक कुल लागत",
-    profitLoss: "लाभ / हानि",
+    profitLoss: "लाभ / हानि"
   },
-
   weather: {
     title: "मौसम पूर्वानुमान",
     subtitle: "आपके खेत के लिए रियल-टाइम मौसम",
@@ -382,102 +366,214 @@ const hi = {
     hot: "गर्म",
     cold: "ठंडा",
     mild: "हल्का",
-    mon: "सोम", tue: "मंगल", wed: "बुध", thu: "गुरु", fri: "शुक्र", sat: "शनि", sun: "रवि",
-    today: "आज", tomorrow: "कल",
+    mon: "सोम",
+    tue: "मंगल",
+    wed: "बुध",
+    thu: "गुरु",
+    fri: "शुक्र",
+    sat: "शनि",
+    sun: "रवि",
+    today: "आज",
+    tomorrow: "कल",
     rainChance: "बारिश की संभावना",
-    high: "अधिकतम", low: "न्यूनतम",
+    high: "अधिकतम",
+    low: "न्यूनतम",
     noWeatherData: "मौसम डेटा उपलब्ध नहीं",
-    fetchingWeather: "मौसम डेटा लाया जा रहा है...",
+    fetchingWeather: "मौसम डेटा लाया जा रहा है..."
   },
-
   market: {
     title: "खाद और कृषि सामग्री खरीदें",
     subtitle: "सत्यापित डीलरों से गुणवत्तापूर्ण कृषि सामग्री खरीदें",
-    products: "उत्पाद", filters: "फ़िल्टर", allCategories: "सभी श्रेणियां",
-    inStock: "स्टॉक में", outOfStock: "स्टॉक नहीं",
-    priceRange: "मूल्य सीमा", sortBy: "क्रमबद्ध करें",
-    priceLowHigh: "मूल्य: कम से ज्यादा", priceHighLow: "मूल्य: ज्यादा से कम",
-    rating: "रेटिंग", addToCart: "कार्ट में जोड़ें", buyNow: "अभी खरीदें",
-    quantity: "मात्रा", unit: "इकाई",
-    perKg: "प्रति किग्रा", perLitre: "प्रति लीटर", perBag: "प्रति बोरी", perUnit: "प्रति इकाई",
-    availableStock: "उपलब्ध स्टॉक", dealer: "डीलर", brand: "ब्रांड",
-    composition: "संरचना", usageInstructions: "उपयोग के निर्देश",
-    cart: "कार्ट", cartEmpty: "आपका कार्ट खाली है", checkout: "चेकआउट",
-    placeOrder: "ऑर्डर करें", orderSuccess: "ऑर्डर सफलतापूर्वक दिया गया!",
+    products: "उत्पाद",
+    filters: "फ़िल्टर",
+    allCategories: "सभी श्रेणियां",
+    inStock: "स्टॉक में",
+    outOfStock: "स्टॉक नहीं",
+    priceRange: "मूल्य सीमा",
+    sortBy: "क्रमबद्ध करें",
+    priceLowHigh: "मूल्य: कम से ज्यादा",
+    priceHighLow: "मूल्य: ज्यादा से कम",
+    rating: "रेटिंग",
+    addToCart: "कार्ट में जोड़ें",
+    buyNow: "अभी खरीदें",
+    quantity: "मात्रा",
+    unit: "इकाई",
+    perKg: "प्रति किग्रा",
+    perLitre: "प्रति लीटर",
+    perBag: "प्रति बोरी",
+    perUnit: "प्रति इकाई",
+    availableStock: "उपलब्ध स्टॉक",
+    dealer: "डीलर",
+    brand: "ब्रांड",
+    composition: "संरचना",
+    usageInstructions: "उपयोग के निर्देश",
+    cart: "कार्ट",
+    cartEmpty: "आपका कार्ट खाली है",
+    checkout: "चेकआउट",
+    placeOrder: "ऑर्डर करें",
+    orderSuccess: "ऑर्डर सफलतापूर्वक दिया गया!",
     continueShopping: "खरीदारी जारी रखें",
-    searchPlaceholder: "खाद, कीटनाशक खोजें...", noProducts: "कोई उत्पाद नहीं मिला",
-    urea: "यूरिया", dap: "DAP", mop: "MOP", npk: "NPK कॉम्प्लेक्स",
-    organicFertilizer: "जैविक खाद", pesticide: "कीटनाशक",
-    herbicide: "खरपतवारनाशक", fungicide: "फफूंदनाशक", insecticide: "कीटनाशक",
-    micronutrient: "सूक्ष्म पोषक", seeds: "बीज", irrigation: "सिंचाई उपकरण",
-    kg: "किलो", litre: "लीटर", bag: "बोरी", pieces: "टुकड़े",
+    searchPlaceholder: "खाद, कीटनाशक खोजें...",
+    noProducts: "कोई उत्पाद नहीं मिला",
+    urea: "यूरिया",
+    dap: "DAP",
+    mop: "MOP",
+    npk: "NPK कॉम्प्लेक्स",
+    organicFertilizer: "जैविक खाद",
+    pesticide: "कीटनाशक",
+    herbicide: "खरपतवारनाशक",
+    fungicide: "फफूंदनाशक",
+    insecticide: "कीटनाशक",
+    micronutrient: "सूक्ष्म पोषक",
+    seeds: "बीज",
+    irrigation: "सिंचाई उपकरण",
+    kg: "किलो",
+    litre: "लीटर",
+    bag: "बोरी",
+    pieces: "टुकड़े"
   },
-
   marketPrices: {
-    title: "बाजार मूल्य", subtitle: "कृषि वस्तुओं के लाइव मंडी मूल्य",
-    commodity: "वस्तु", mandi: "मंडी", minPrice: "न्यूनतम मूल्य", maxPrice: "अधिकतम मूल्य",
-    modalPrice: "मोडल मूल्य", state: "राज्य", district: "जिला", variety: "किस्म",
-    unit: "इकाई", date: "तारीख", pricePerQuintal: "प्रति क्विंटल मूल्य (₹)",
-    searchCommodity: "वस्तु खोजें...", noData: "बाजार डेटा उपलब्ध नहीं",
-    loading: "नवीनतम मूल्य लाए जा रहे हैं...", lastUpdated: "अंतिम अपडेट",
-    priceUp: "मूल्य बढ़ा", priceDown: "मूल्य घटा", stable: "स्थिर",
-    perQuintal: "/ क्विंटल", quintal: "क्विंटल",
-    rice: "धान", wheat: "गेहूं", maize: "मक्का", cotton: "कपास",
-    groundnut: "मूंगफली", soybean: "सोयाबीन", onion: "प्याज", tomato: "टमाटर",
-    chilli: "मिर्च", turmeric: "हल्दी", sugarcane: "गन्ना",
-    jowar: "ज्वार", bajra: "बाजरा", ragi: "रागी", moong: "मूंग दाल",
-    urad: "उड़द दाल", chana: "चना",
+    title: "बाजार मूल्य",
+    subtitle: "कृषि वस्तुओं के लाइव मंडी मूल्य",
+    commodity: "वस्तु",
+    mandi: "मंडी",
+    minPrice: "न्यूनतम मूल्य",
+    maxPrice: "अधिकतम मूल्य",
+    modalPrice: "मोडल मूल्य",
+    state: "राज्य",
+    district: "जिला",
+    variety: "किस्म",
+    unit: "इकाई",
+    date: "तारीख",
+    pricePerQuintal: "प्रति क्विंटल मूल्य (₹)",
+    searchCommodity: "वस्तु खोजें...",
+    noData: "बाजार डेटा उपलब्ध नहीं",
+    loading: "नवीनतम मूल्य लाए जा रहे हैं...",
+    lastUpdated: "अंतिम अपडेट",
+    priceUp: "मूल्य बढ़ा",
+    priceDown: "मूल्य घटा",
+    stable: "स्थिर",
+    perQuintal: "/ क्विंटल",
+    quintal: "क्विंटल",
+    rice: "धान",
+    wheat: "गेहूं",
+    maize: "मक्का",
+    cotton: "कपास",
+    groundnut: "मूंगफली",
+    soybean: "सोयाबीन",
+    onion: "प्याज",
+    tomato: "टमाटर",
+    chilli: "मिर्च",
+    turmeric: "हल्दी",
+    sugarcane: "गन्ना",
+    jowar: "ज्वार",
+    bajra: "बाजरा",
+    ragi: "रागी",
+    moong: "मूंग दाल",
+    urad: "उड़द दाल",
+    chana: "चना"
   },
-
   news: {
-    title: "कृषि समाचार", subtitle: "कृषि जगत से ताजा जानकारी",
-    readMore: "और पढ़ें", source: "स्रोत", publishedOn: "प्रकाशित तारीख",
-    category: "श्रेणी", noNews: "अभी कोई समाचार उपलब्ध नहीं",
+    title: "कृषि समाचार",
+    subtitle: "कृषि जगत से ताजा जानकारी",
+    readMore: "और पढ़ें",
+    source: "स्रोत",
+    publishedOn: "प्रकाशित तारीख",
+    category: "श्रेणी",
+    noNews: "अभी कोई समाचार उपलब्ध नहीं",
     fetchingNews: "ताजा समाचार लाए जा रहे हैं...",
-    trending: "ट्रेंडिंग", recent: "हालिया", all: "सभी समाचार",
-    governmentSchemes: "सरकारी योजनाएं", cropAdvisory: "फसल सलाह",
-    marketNews: "बाजार समाचार", weatherAlerts: "मौसम अलर्ट", technology: "तकनीक",
+    trending: "ट्रेंडिंग",
+    recent: "हालिया",
+    all: "सभी समाचार",
+    governmentSchemes: "सरकारी योजनाएं",
+    cropAdvisory: "फसल सलाह",
+    marketNews: "बाजार समाचार",
+    weatherAlerts: "मौसम अलर्ट",
+    technology: "तकनीक"
   },
-
   expenses: {
-    title: "मेरे खर्चे", subtitle: "खेत के खर्चों को ट्रैक और प्रबंधित करें",
-    addExpense: "खर्च जोड़ें", editExpense: "खर्च संपादित करें", deleteExpense: "खर्च हटाएं",
-    totalExpenses: "कुल खर्चे", expenseHistory: "खर्च इतिहास",
-    noExpenses: "अभी तक कोई खर्च दर्ज नहीं", amount: "राशि", date: "तारीख",
-    category: "श्रेणी", notes: "नोट्स", cropName: "फसल", allCrops: "सभी फसलें",
-    filterByCategory: "श्रेणी से फ़िल्टर", filterByDate: "तारीख से फ़िल्टर",
-    thisMonth: "इस महीने", lastMonth: "पिछले महीने", last3Months: "पिछले 3 महीने", thisYear: "इस साल",
-    seeds: "बीज", fertilizer: "खाद", pesticide: "कीटनाशक",
-    labour: "मजदूरी", irrigation: "सिंचाई", equipment: "उपकरण",
-    transport: "परिवहन", other: "अन्य",
-    perCrop: "फसल-वार विवरण", expenseAdded: "खर्च सफलतापूर्वक जोड़ा गया",
-    expenseDeleted: "खर्च हटाया गया",
+    title: "मेरे खर्चे",
+    subtitle: "खेत के खर्चों को ट्रैक और प्रबंधित करें",
+    addExpense: "खर्च जोड़ें",
+    editExpense: "खर्च संपादित करें",
+    deleteExpense: "खर्च हटाएं",
+    totalExpenses: "कुल खर्चे",
+    expenseHistory: "खर्च इतिहास",
+    noExpenses: "अभी तक कोई खर्च दर्ज नहीं",
+    amount: "राशि",
+    date: "तारीख",
+    category: "श्रेणी",
+    notes: "नोट्स",
+    cropName: "फसल",
+    allCrops: "सभी फसलें",
+    filterByCategory: "श्रेणी से फ़िल्टर",
+    filterByDate: "तारीख से फ़िल्टर",
+    thisMonth: "इस महीने",
+    lastMonth: "पिछले महीने",
+    last3Months: "पिछले 3 महीने",
+    thisYear: "इस साल",
+    seeds: "बीज",
+    fertilizer: "खाद",
+    pesticide: "कीटनाशक",
+    labour: "मजदूरी",
+    irrigation: "सिंचाई",
+    equipment: "उपकरण",
+    transport: "परिवहन",
+    other: "अन्य",
+    perCrop: "फसल-वार विवरण",
+    expenseAdded: "खर्च सफलतापूर्वक जोड़ा गया",
+    expenseDeleted: "खर्च हटाया गया"
   },
-
   profile: {
-    title: "मेरी प्रोफ़ाइल", personalDetails: "व्यक्तिगत विवरण",
-    fullName: "पूरा नाम", email: "ईमेल", phone: "फोन", address: "पता",
-    changePassword: "पासवर्ड बदलें", currentPassword: "वर्तमान पासवर्ड",
-    newPassword: "नया पासवर्ड", confirmPassword: "पासवर्ड की पुष्टि करें",
-    updateProfile: "प्रोफ़ाइल अपडेट करें", profileUpdated: "प्रोफ़ाइल सफलतापूर्वक अपडेट हुई",
-    profilePhoto: "प्रोफ़ाइल फोटो", uploadPhoto: "फोटो अपलोड करें",
-    accountSettings: "खाता सेटिंग", notifications: "सूचनाएं",
-    language: "भाषा", theme: "थीम", deleteAccount: "खाता हटाएं",
-    farmerProfile: "किसान प्रोफ़ाइल", landDetails: "जमीन विवरण",
-    bankDetails: "बैंक विवरण", aadhaarNumber: "आधार नंबर", panNumber: "PAN नंबर",
+    title: "मेरी प्रोफ़ाइल",
+    personalDetails: "व्यक्तिगत विवरण",
+    fullName: "पूरा नाम",
+    email: "ईमेल",
+    phone: "फोन",
+    address: "पता",
+    changePassword: "पासवर्ड बदलें",
+    currentPassword: "वर्तमान पासवर्ड",
+    newPassword: "नया पासवर्ड",
+    confirmPassword: "पासवर्ड की पुष्टि करें",
+    updateProfile: "प्रोफ़ाइल अपडेट करें",
+    profileUpdated: "प्रोफ़ाइल सफलतापूर्वक अपडेट हुई",
+    profilePhoto: "प्रोफ़ाइल फोटो",
+    uploadPhoto: "फोटो अपलोड करें",
+    accountSettings: "खाता सेटिंग",
+    notifications: "सूचनाएं",
+    language: "भाषा",
+    theme: "थीम",
+    deleteAccount: "खाता हटाएं",
+    farmerProfile: "किसान प्रोफ़ाइल",
+    landDetails: "जमीन विवरण",
+    bankDetails: "बैंक विवरण",
+    aadhaarNumber: "आधार नंबर",
+    panNumber: "PAN नंबर"
   },
-
   diagnosis: {
-    title: "फसल स्वास्थ्य निदान", subtitle: "रोग पता लगाने के लिए फसल की फोटो अपलोड करें",
-    uploadImage: "फसल की तस्वीर अपलोड करें", dragDrop: "खींचें और छोड़ें या क्लिक करें",
-    supportedFormats: "समर्थित: JPG, PNG, WEBP", analyzing: "आपकी फसल का विश्लेषण हो रहा है...",
-    result: "निदान परिणाम", disease: "पता चला रोग", confidence: "विश्वास",
-    treatment: "अनुशंसित उपचार", prevention: "रोकथाम के सुझाव",
-    healthy: "फसल स्वस्थ दिखती है!", noDisease: "कोई रोग नहीं पाया गया",
-    tryAnother: "दूसरी तस्वीर आजमाएं", shareResult: "परिणाम साझा करें",
-    severity: "गंभीरता", mild: "हल्का", moderate: "मध्यम", severe: "गंभीर", critical: "अत्यंत गंभीर",
+    title: "फसल स्वास्थ्य निदान",
+    subtitle: "रोग पता लगाने के लिए फसल की फोटो अपलोड करें",
+    uploadImage: "फसल की तस्वीर अपलोड करें",
+    dragDrop: "खींचें और छोड़ें या क्लिक करें",
+    supportedFormats: "समर्थित: JPG, PNG, WEBP",
+    analyzing: "आपकी फसल का विश्लेषण हो रहा है...",
+    result: "निदान परिणाम",
+    disease: "पता चला रोग",
+    confidence: "विश्वास",
+    treatment: "अनुशंसित उपचार",
+    prevention: "रोकथाम के सुझाव",
+    healthy: "फसल स्वस्थ दिखती है!",
+    noDisease: "कोई रोग नहीं पाया गया",
+    tryAnother: "दूसरी तस्वीर आजमाएं",
+    shareResult: "परिणाम साझा करें",
+    severity: "गंभीरता",
+    mild: "हल्का",
+    moderate: "मध्यम",
+    severe: "गंभीर",
+    critical: "अत्यंत गंभीर",
     apiError: "AI सेवा उपलब्ध नहीं। कृपया API कुंजी जांचें।",
-    selectCrop: "फसल प्रकार चुनें (वैकल्पिक)", diagnoseBtn: "मेरी फसल का निदान करें",
+    selectCrop: "फसल प्रकार चुनें (वैकल्पिक)",
+    diagnoseBtn: "मेरी फसल का निदान करें"
   },
   voice: {
     title: "वॉइस असिस्टेंट",
@@ -496,9 +592,8 @@ const hi = {
     checkWeather: "मौसम",
     myExpenses: "मेरे खर्चे",
     openCrops: "फसल खोलो",
-    priceOf: "का भाव",
+    priceOf: "का भाव"
   },
-
   cropDetail: {
     overview: "अवलोकन",
     expenses: "खर्चे",
@@ -602,9 +697,8 @@ const hi = {
     machinery: "मशीनरी",
     irrigation: "सिंचाई",
     logistics: "रसद",
-    miscellaneous: "विविध",
+    miscellaneous: "विविध"
   },
-
   marketPage: {
     title: "बाज़ार",
     searchPlaceholder: "नाम, ब्रांड से खोजें (जैसे DAP, यूरिया, IFFCO)...",
@@ -633,21 +727,24 @@ const hi = {
     orderDetails: "ऑर्डर विवरण",
     emptyCart: "आपकी कार्ट खाली है",
     continueShopping: "खरीदारी जारी रखें",
+    pack: "पैक",
+    inCart: "कार्ट में है",
+    adjustFilters: "अपनी खोज या फ़िल्टर को समायोजित करने का प्रयास करें",
+    fertilizer: "उर्वरक",
+    pesticide: "कीटनाशक"
   },
-
   marketPricesAdvice: {
     pricesIncreasing: "भाव बढ़ रहे हैं। बेहतर दरों के लिए इंतज़ार करें।",
     pricesDeclining: "भाव गिर रहे हैं। बेचने से पहले MSP जांचें।",
     priceStable: "भाव स्थिर हैं।",
     latestPrice: "नवीनतम भाव",
     maxPrice: "अधिकतम भाव",
-    msp: "MSP",
+    msp: "एमएसपी",
     perQuintal: "/ क्विंटल",
     mandi: "मंडी",
     lastUpdated: "अंतिम अपडेट",
-    recentlyUpdated: "हाल ही में अपडेट",
+    recentlyUpdated: "हाल ही में अपडेट"
   },
-
   communityHub: {
     title: "कम्युनिटी हब",
     subtitle: "साथी किसानों से जुड़ें",
@@ -667,9 +764,8 @@ const hi = {
     online: "ऑनलाइन",
     location: "स्थान",
     p2p: "प्रत्यक्ष",
-    group: "ग्रुप",
+    group: "ग्रुप"
   },
-
   chatbotQuick: {
     farmerQ1: "मेरे कुल फसल खर्चे कितने हैं?",
     farmerQ2: "मेरी कटाई का सारांश दिखाओ",
@@ -682,8 +778,8 @@ const hi = {
     manufacturerQ3: "मैंने कितना बेचा है?",
     customerQ1: "कौन से उत्पाद उपलब्ध हैं?",
     customerQ2: "मेरे ऑर्डर ट्रैक करो",
-    customerQ3: "सबसे अच्छे जैविक उर्वरक?",
-  },
+    customerQ3: "सबसे अच्छे जैविक उर्वरक?"
+  }
 };
 
 export default hi;

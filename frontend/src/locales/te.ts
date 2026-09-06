@@ -1,7 +1,3 @@
-/**
- * Telugu (తెలుగు) — Translation dictionary for AgriFlow
- */
-
 const te = {
   common: {
     save: "సేవ్ చేయండి",
@@ -42,9 +38,8 @@ const te = {
     profile: "ప్రొఫైల్",
     welcome: "స్వాగతం",
     language: "భాష",
-    selectLanguage: "భాషను ఎంచుకోండి",
+    selectLanguage: "భాషను ఎంచుకోండి"
   },
-
   status: {
     active: "క్రియాశీలం",
     inactive: "నిష్క్రియం",
@@ -61,9 +56,8 @@ const te = {
     draft: "డ్రాఫ్ట్",
     growing: "పెరుగుతోంది",
     harvested: "కోయబడింది",
-    sold: "అమ్మబడింది",
+    sold: "అమ్మబడింది"
   },
-
   auth: {
     login: "లాగిన్",
     register: "రిజిస్టర్",
@@ -95,9 +89,8 @@ const te = {
     sendOtp: "OTP పంపండి",
     verifyOtp: "OTP ధృవీకరించండి",
     enterOtp: "OTP నమోదు చేయండి",
-    supplyChainPlatform: "సరఫరా గొలుసు వేదిక",
+    supplyChainPlatform: "సరఫరా గొలుసు వేదిక"
   },
-
   sidebar: {
     dashboard: "డాష్‌బోర్డ్",
     myCrops: "నా పంటలు",
@@ -118,9 +111,8 @@ const te = {
     sales: "అమ్మకాలు",
     home: "హోమ్",
     marketplace: "మార్కెట్‌ప్లేస్",
-    cart: "కార్ట్",
+    cart: "కార్ట్"
   },
-
   farmer: {
     welcomeMessage: "మీ వ్యవసాయం ఒక చూపులో",
     myCrops: "నా పంటలు",
@@ -184,7 +176,7 @@ const te = {
     bankDetails: "బ్యాంక్ వివరాలు",
     bankName: "బ్యాంక్",
     accountNumber: "ఖాతా",
-    ifscCode: "IFSC",
+    ifscCode: "ఐఎఫ్‌ఎస్‌సి",
     aadhaarLast4: "ఆధార్ (చివరి 4)",
     notes: "గమనికలు",
     status: "స్థితి",
@@ -198,9 +190,8 @@ const te = {
     bankInfo: "బ్యాంక్ సమాచారం",
     aiWeatherAlert: "వాతావరణ హెచ్చరిక",
     healthy: "ఆరోగ్యకరంగా ఉంది",
-    monitor: "నిఘా ఉంచండి",
+    monitor: "నిఘా ఉంచండి"
   },
-
   shop: {
     shopDashboard: "దుకాణం డాష్‌బోర్డ్",
     totalRevenue: "మొత్తం ఆదాయం",
@@ -227,8 +218,8 @@ const te = {
     orderValue: "ఆర్డర్ విలువ",
     customer: "కస్టమర్",
     orderDate: "ఆర్డర్ తేదీ",
+    discovery: "అన్వేషణ మరియు అంతర్దృష్టులు"
   },
-
   customer: {
     welcomeSubtitle: "పొలం నుండి నేరుగా మీ ఇంటి వరకు. ఈ రోజు స్థానిక ఉత్పత్తులను కనుగొనండి.",
     shopNow: "ఇప్పుడు కొనండి",
@@ -245,9 +236,8 @@ const te = {
     addToCart: "కార్ట్‌కు జోడించండి",
     checkout: "చెక్అవుట్",
     orderHistory: "ఆర్డర్ చరిత్ర",
-    trackOrder: "ఆర్డర్ ట్రాక్ చేయండి",
+    trackOrder: "ఆర్డర్ ట్రాక్ చేయండి"
   },
-
   manufacturer: {
     manufacturerDashboard: "మిల్లు డాష్‌బోర్డ్",
     totalPurchases: "మొత్తం కొనుగోళ్ళు",
@@ -262,9 +252,8 @@ const te = {
     supplier: "సరఫరాదారు",
     materialType: "సామగ్రి రకం",
     unitPrice: "యూనిట్ ధర",
-    totalCost: "మొత్తం వ్యయం",
+    totalCost: "మొత్తం వ్యయం"
   },
-
   chatbot: {
     title: "AgriFlow సహాయకుడు",
     placeholder: "మీ సందేశాన్ని టైప్ చేయండి...",
@@ -276,9 +265,8 @@ const te = {
     welcomeShop: "నమస్కారం! నేను మీ దుకాణ సహాయకుడిని. మీ ఇన్వెంటరీ, ఆర్డర్‌లు, అమ్మకాల విశ్లేషణ, ఖర్చులు మరియు వ్యాపార అంతర్దృష్టులలో సహాయం చేయగలను.",
     welcomeManufacturer: "నమస్కారం! నేను మీ మిల్లు సహాయకుడిని. మీ కొనుగోళ్ళు, ఉత్పత్తి బ్యాచ్‌లు, అమ్మకాలు మరియు తయారీ కార్యకలాపాలలో సహాయం చేయగలను.",
     welcomeCustomer: "నమస్కారం! నేను మీ AgriFlow సహాయకుడిని. ఉత్పత్తులు కనుగొనడం, ఆర్డర్‌లను ట్రాక్ చేయడం మరియు వ్యవసాయ ప్రశ్నలకు సమాధానం ఇవ్వడంలో సహాయం చేయగలను.",
-    quickQuestions: "త్వరిత ప్రశ్నలు",
+    quickQuestions: "త్వరిత ప్రశ్నలు"
   },
-
   payments: {
     payment: "చెల్లింపు",
     payNow: "ఇప్పుడు చెల్లించండి",
@@ -286,9 +274,8 @@ const te = {
     paymentMethod: "చెల్లింపు విధానం",
     transactionId: "లావాదేవీ ID",
     paymentStatus: "చెల్లింపు స్థితి",
-    paymentDate: "చెల్లింపు తేదీ",
+    paymentDate: "చెల్లింపు తేదీ"
   },
-
   analytics: {
     analytics: "విశ్లేషణ",
     overview: "సమీక్ష",
@@ -298,9 +285,8 @@ const te = {
     revenue: "ఆదాయం",
     expenses: "ఖర్చులు",
     profit: "లాభం",
-    growth: "వృద్ధి",
+    growth: "వృద్ధి"
   },
-
   crops: {
     manageDesc: "మీ అన్ని పంటలను నిర్వహించండి మరియు వాటి పురోగతిని ట్రాక్ చేయండి",
     harvestedSold: "కోయబడిన / అమ్మబడిన పంటలు",
@@ -342,9 +328,8 @@ const te = {
     other: "ఇతర",
     noExpenses: "ఇంకా ఖర్చులు నమోదు చేయలేదు",
     totalCostSoFar: "ఇప్పటివరకు మొత్తం వ్యయం",
-    profitLoss: "లాభం / నష్టం",
+    profitLoss: "లాభం / నష్టం"
   },
-
   weather: {
     title: "వాతావరణ అంచనా",
     subtitle: "మీ వ్యవసాయ స్థానానికి రియల్-టైమ్ వాతావరణం",
@@ -381,102 +366,214 @@ const te = {
     hot: "వేడి",
     cold: "చలి",
     mild: "మితమైన",
-    mon: "సోమ", tue: "మంగళ", wed: "బుధ", thu: "గురు", fri: "శుక్ర", sat: "శని", sun: "ఆది",
-    today: "ఈరోజు", tomorrow: "రేపు",
+    mon: "సోమ",
+    tue: "మంగళ",
+    wed: "బుధ",
+    thu: "గురు",
+    fri: "శుక్ర",
+    sat: "శని",
+    sun: "ఆది",
+    today: "ఈరోజు",
+    tomorrow: "రేపు",
     rainChance: "వర్షం అవకాశం",
-    high: "గరిష్ట", low: "కనిష్ట",
+    high: "గరిష్ట",
+    low: "కనిష్ట",
     noWeatherData: "వాతావరణ డేటా అందుబాటులో లేదు",
-    fetchingWeather: "వాతావరణ డేటా తీసుకుంటున్నాం...",
+    fetchingWeather: "వాతావరణ డేటా తీసుకుంటున్నాం..."
   },
-
   market: {
     title: "ఎరువులు & వనరులు కొనండి",
     subtitle: "ధృవీకరించిన డీలర్ల నుండి నాణ్యమైన వ్యవసాయ వస్తువులు కొనండి",
-    products: "ఉత్పత్తులు", filters: "వడపోతలు", allCategories: "అన్ని వర్గాలు",
-    inStock: "స్టాక్‌లో ఉంది", outOfStock: "స్టాక్ లేదు",
-    priceRange: "ధర పరిధి", sortBy: "క్రమబద్ధించు",
-    priceLowHigh: "ధర: తక్కువ నుండి అధికం", priceHighLow: "ధర: అధికం నుండి తక్కువ",
-    rating: "రేటింగ్", addToCart: "కార్ట్‌కు జోడించండి", buyNow: "ఇప్పుడే కొనండి",
-    quantity: "పరిమాణం", unit: "యూనిట్",
-    perKg: "కిలోకు", perLitre: "లీటరుకు", perBag: "బస్తాకు", perUnit: "యూనిట్‌కు",
-    availableStock: "అందుబాటులో ఉన్న స్టాక్", dealer: "డీలర్", brand: "బ్రాండ్",
-    composition: "సమ్మేళనం", usageInstructions: "వాడకం సూచనలు",
-    cart: "కార్ట్", cartEmpty: "మీ కార్ట్ ఖాళీగా ఉంది", checkout: "చెక్అవుట్",
-    placeOrder: "ఆర్డర్ చేయండి", orderSuccess: "ఆర్డర్ విజయవంతంగా పెట్టారు!",
+    products: "ఉత్పత్తులు",
+    filters: "వడపోతలు",
+    allCategories: "అన్ని వర్గాలు",
+    inStock: "స్టాక్‌లో ఉంది",
+    outOfStock: "స్టాక్ లేదు",
+    priceRange: "ధర పరిధి",
+    sortBy: "క్రమబద్ధించు",
+    priceLowHigh: "ధర: తక్కువ నుండి అధికం",
+    priceHighLow: "ధర: అధికం నుండి తక్కువ",
+    rating: "రేటింగ్",
+    addToCart: "కార్ట్‌కు జోడించండి",
+    buyNow: "ఇప్పుడే కొనండి",
+    quantity: "పరిమాణం",
+    unit: "యూనిట్",
+    perKg: "కిలోకు",
+    perLitre: "లీటరుకు",
+    perBag: "బస్తాకు",
+    perUnit: "యూనిట్‌కు",
+    availableStock: "అందుబాటులో ఉన్న స్టాక్",
+    dealer: "డీలర్",
+    brand: "బ్రాండ్",
+    composition: "సమ్మేళనం",
+    usageInstructions: "వాడకం సూచనలు",
+    cart: "కార్ట్",
+    cartEmpty: "మీ కార్ట్ ఖాళీగా ఉంది",
+    checkout: "చెక్అవుట్",
+    placeOrder: "ఆర్డర్ చేయండి",
+    orderSuccess: "ఆర్డర్ విజయవంతంగా పెట్టారు!",
     continueShopping: "షాపింగ్ కొనసాగించండి",
-    searchPlaceholder: "ఎరువులు, క్రిమిసంహారకాలు వెతకండి...", noProducts: "ఉత్పత్తులు కనుగొనబడలేదు",
-    urea: "యూరియా", dap: "DAP", mop: "MOP", npk: "NPK కాంప్లెక్స్",
-    organicFertilizer: "సేంద్రియ ఎరువు", pesticide: "క్రిమిసంహారకం",
-    herbicide: "కలుపు నిర్మూలన", fungicide: "శిలీంధ్ర నాశని", insecticide: "కీటకనాశని",
-    micronutrient: "సూక్ష్మపోషకం", seeds: "విత్తనాలు", irrigation: "నీటిపారుదల పరికరాలు",
-    kg: "కిలో", litre: "లీటర్", bag: "బస్తా", pieces: "ముక్కలు",
+    searchPlaceholder: "ఎరువులు, క్రిమిసంహారకాలు వెతకండి...",
+    noProducts: "ఉత్పత్తులు కనుగొనబడలేదు",
+    urea: "యూరియా",
+    dap: "DAP",
+    mop: "MOP",
+    npk: "NPK కాంప్లెక్స్",
+    organicFertilizer: "సేంద్రియ ఎరువు",
+    pesticide: "క్రిమిసంహారకం",
+    herbicide: "కలుపు నిర్మూలన",
+    fungicide: "శిలీంధ్ర నాశని",
+    insecticide: "కీటకనాశని",
+    micronutrient: "సూక్ష్మపోషకం",
+    seeds: "విత్తనాలు",
+    irrigation: "నీటిపారుదల పరికరాలు",
+    kg: "కిలో",
+    litre: "లీటర్",
+    bag: "బస్తా",
+    pieces: "ముక్కలు"
   },
-
   marketPrices: {
-    title: "మార్కెట్ ధరలు", subtitle: "వ్యవసాయ వస్తువులకు లైవ్ మండి ధరలు",
-    commodity: "వస్తువు", mandi: "మండి", minPrice: "కనిష్ట ధర", maxPrice: "గరిష్ట ధర",
-    modalPrice: "మోడల్ ధర", state: "రాష్ట్రం", district: "జిల్లా", variety: "రకం",
-    unit: "యూనిట్", date: "తేదీ", pricePerQuintal: "క్వింటాలుకు ధర (₹)",
-    searchCommodity: "వస్తువు వెతకండి...", noData: "మార్కెట్ డేటా అందుబాటులో లేదు",
-    loading: "తాజా ధరలు తీసుకుంటున్నాం...", lastUpdated: "చివరిగా నవీకరించబడింది",
-    priceUp: "ధర పెరిగింది", priceDown: "ధర తగ్గింది", stable: "స్థిరంగా ఉంది",
-    perQuintal: "/ క్వింటాలు", quintal: "క్వింటాలు",
-    rice: "వరి", wheat: "గోధుమ", maize: "మొక్కజొన్న", cotton: "పత్తి",
-    groundnut: "వేరుశెనగ", soybean: "సోయాబీన్", onion: "ఉల్లిపాయ", tomato: "టమాటా",
-    chilli: "మిర్చి", turmeric: "పసుపు", sugarcane: "చెరకు",
-    jowar: "జొన్న", bajra: "సజ్జ", ragi: "రాగి", moong: "పెసర పప్పు",
-    urad: "మినుముల పప్పు", chana: "శనగలు",
+    title: "మార్కెట్ ధరలు",
+    subtitle: "వ్యవసాయ వస్తువులకు లైవ్ మండి ధరలు",
+    commodity: "వస్తువు",
+    mandi: "మండి",
+    minPrice: "కనిష్ట ధర",
+    maxPrice: "గరిష్ట ధర",
+    modalPrice: "మోడల్ ధర",
+    state: "రాష్ట్రం",
+    district: "జిల్లా",
+    variety: "రకం",
+    unit: "యూనిట్",
+    date: "తేదీ",
+    pricePerQuintal: "క్వింటాలుకు ధర (₹)",
+    searchCommodity: "వస్తువు వెతకండి...",
+    noData: "మార్కెట్ డేటా అందుబాటులో లేదు",
+    loading: "తాజా ధరలు తీసుకుంటున్నాం...",
+    lastUpdated: "చివరిగా నవీకరించబడింది",
+    priceUp: "ధర పెరిగింది",
+    priceDown: "ధర తగ్గింది",
+    stable: "స్థిరంగా ఉంది",
+    perQuintal: "/ క్వింటాలు",
+    quintal: "క్వింటాలు",
+    rice: "వరి",
+    wheat: "గోధుమ",
+    maize: "మొక్కజొన్న",
+    cotton: "పత్తి",
+    groundnut: "వేరుశెనగ",
+    soybean: "సోయాబీన్",
+    onion: "ఉల్లిపాయ",
+    tomato: "టమాటా",
+    chilli: "మిర్చి",
+    turmeric: "పసుపు",
+    sugarcane: "చెరకు",
+    jowar: "జొన్న",
+    bajra: "సజ్జ",
+    ragi: "రాగి",
+    moong: "పెసర పప్పు",
+    urad: "మినుముల పప్పు",
+    chana: "శనగలు"
   },
-
   news: {
-    title: "వ్యవసాయ వార్తలు", subtitle: "వ్యవసాయ రంగం నుండి తాజా నవీకరణలు",
-    readMore: "మరింత చదవండి", source: "మూలం", publishedOn: "ప్రచురించిన తేదీ",
-    category: "వర్గం", noNews: "ప్రస్తుతం వార్తలు అందుబాటులో లేవు",
+    title: "వ్యవసాయ వార్తలు",
+    subtitle: "వ్యవసాయ రంగం నుండి తాజా నవీకరణలు",
+    readMore: "మరింత చదవండి",
+    source: "మూలం",
+    publishedOn: "ప్రచురించిన తేదీ",
+    category: "వర్గం",
+    noNews: "ప్రస్తుతం వార్తలు అందుబాటులో లేవు",
     fetchingNews: "తాజా వార్తలు తీసుకుంటున్నాం...",
-    trending: "ట్రెండింగ్", recent: "ఇటీవలి", all: "అన్ని వార్తలు",
-    governmentSchemes: "ప్రభుత్వ పథకాలు", cropAdvisory: "పంట సలహా",
-    marketNews: "మార్కెట్ వార్తలు", weatherAlerts: "వాతావరణ హెచ్చరికలు", technology: "సాంకేతికత",
+    trending: "ట్రెండింగ్",
+    recent: "ఇటీవలి",
+    all: "అన్ని వార్తలు",
+    governmentSchemes: "ప్రభుత్వ పథకాలు",
+    cropAdvisory: "పంట సలహా",
+    marketNews: "మార్కెట్ వార్తలు",
+    weatherAlerts: "వాతావరణ హెచ్చరికలు",
+    technology: "సాంకేతికత"
   },
-
   expenses: {
-    title: "నా ఖర్చులు", subtitle: "వ్యవసాయ ఖర్చులను ట్రాక్ చేసి నిర్వహించండి",
-    addExpense: "ఖర్చు జోడించండి", editExpense: "ఖర్చు మార్చు", deleteExpense: "ఖర్చు తొలగించండి",
-    totalExpenses: "మొత్తం ఖర్చులు", expenseHistory: "ఖర్చు చరిత్ర",
-    noExpenses: "ఇంకా ఖర్చులు నమోదు చేయలేదు", amount: "మొత్తం", date: "తేదీ",
-    category: "వర్గం", notes: "నోట్లు", cropName: "పంట", allCrops: "అన్ని పంటలు",
-    filterByCategory: "వర్గం ద్వారా వడపోత", filterByDate: "తేదీ ద్వారా వడపోత",
-    thisMonth: "ఈ నెల", lastMonth: "గత నెల", last3Months: "గత 3 నెలలు", thisYear: "ఈ సంవత్సరం",
-    seeds: "విత్తనాలు", fertilizer: "ఎరువులు", pesticide: "క్రిమిసంహారకం",
-    labour: "కూలీ", irrigation: "నీటిపారుదల", equipment: "పరికరాలు",
-    transport: "రవాణా", other: "ఇతర",
-    perCrop: "పంట వారీ వివరాలు", expenseAdded: "ఖర్చు విజయవంతంగా జోడించబడింది",
-    expenseDeleted: "ఖర్చు తొలగించబడింది",
+    title: "నా ఖర్చులు",
+    subtitle: "వ్యవసాయ ఖర్చులను ట్రాక్ చేసి నిర్వహించండి",
+    addExpense: "ఖర్చు జోడించండి",
+    editExpense: "ఖర్చు మార్చు",
+    deleteExpense: "ఖర్చు తొలగించండి",
+    totalExpenses: "మొత్తం ఖర్చులు",
+    expenseHistory: "ఖర్చు చరిత్ర",
+    noExpenses: "ఇంకా ఖర్చులు నమోదు చేయలేదు",
+    amount: "మొత్తం",
+    date: "తేదీ",
+    category: "వర్గం",
+    notes: "నోట్లు",
+    cropName: "పంట",
+    allCrops: "అన్ని పంటలు",
+    filterByCategory: "వర్గం ద్వారా వడపోత",
+    filterByDate: "తేదీ ద్వారా వడపోత",
+    thisMonth: "ఈ నెల",
+    lastMonth: "గత నెల",
+    last3Months: "గత 3 నెలలు",
+    thisYear: "ఈ సంవత్సరం",
+    seeds: "విత్తనాలు",
+    fertilizer: "ఎరువులు",
+    pesticide: "క్రిమిసంహారకం",
+    labour: "కూలీ",
+    irrigation: "నీటిపారుదల",
+    equipment: "పరికరాలు",
+    transport: "రవాణా",
+    other: "ఇతర",
+    perCrop: "పంట వారీ వివరాలు",
+    expenseAdded: "ఖర్చు విజయవంతంగా జోడించబడింది",
+    expenseDeleted: "ఖర్చు తొలగించబడింది"
   },
-
   profile: {
-    title: "నా ప్రొఫైల్", personalDetails: "వ్యక్తిగత వివరాలు",
-    fullName: "పూర్తి పేరు", email: "ఇమెయిల్", phone: "ఫోన్", address: "చిరునామా",
-    changePassword: "పాస్‌వర్డ్ మార్చు", currentPassword: "ప్రస్తుత పాస్‌వర్డ్",
-    newPassword: "కొత్త పాస్‌వర్డ్", confirmPassword: "పాస్‌వర్డ్ నిర్ధారించండి",
-    updateProfile: "ప్రొఫైల్ నవీకరించండి", profileUpdated: "ప్రొఫైల్ విజయవంతంగా నవీకరించబడింది",
-    profilePhoto: "ప్రొఫైల్ ఫోటో", uploadPhoto: "ఫోటో అప్‌లోడ్ చేయండి",
-    accountSettings: "ఖాతా సెట్టింగ్‌లు", notifications: "నోటిఫికేషన్‌లు",
-    language: "భాష", theme: "థీమ్", deleteAccount: "ఖాతా తొలగించండి",
-    farmerProfile: "రైతు ప్రొఫైల్", landDetails: "భూమి వివరాలు",
-    bankDetails: "బ్యాంక్ వివరాలు", aadhaarNumber: "ఆధార్ నంబర్", panNumber: "PAN నంబర్",
+    title: "నా ప్రొఫైల్",
+    personalDetails: "వ్యక్తిగత వివరాలు",
+    fullName: "పూర్తి పేరు",
+    email: "ఇమెయిల్",
+    phone: "ఫోన్",
+    address: "చిరునామా",
+    changePassword: "పాస్‌వర్డ్ మార్చు",
+    currentPassword: "ప్రస్తుత పాస్‌వర్డ్",
+    newPassword: "కొత్త పాస్‌వర్డ్",
+    confirmPassword: "పాస్‌వర్డ్ నిర్ధారించండి",
+    updateProfile: "ప్రొఫైల్ నవీకరించండి",
+    profileUpdated: "ప్రొఫైల్ విజయవంతంగా నవీకరించబడింది",
+    profilePhoto: "ప్రొఫైల్ ఫోటో",
+    uploadPhoto: "ఫోటో అప్‌లోడ్ చేయండి",
+    accountSettings: "ఖాతా సెట్టింగ్‌లు",
+    notifications: "నోటిఫికేషన్‌లు",
+    language: "భాష",
+    theme: "థీమ్",
+    deleteAccount: "ఖాతా తొలగించండి",
+    farmerProfile: "రైతు ప్రొఫైల్",
+    landDetails: "భూమి వివరాలు",
+    bankDetails: "బ్యాంక్ వివరాలు",
+    aadhaarNumber: "ఆధార్ నంబర్",
+    panNumber: "PAN నంబర్"
   },
-
   diagnosis: {
-    title: "పంట ఆరోగ్య నిర్ధారణ", subtitle: "వ్యాధులను గుర్తించడానికి పంట ఫోటో అప్‌లోడ్ చేయండి",
-    uploadImage: "పంట చిత్రం అప్‌లోడ్ చేయండి", dragDrop: "లాగి వదలండి లేదా క్లిక్ చేయండి",
-    supportedFormats: "మద్దతు: JPG, PNG, WEBP", analyzing: "మీ పంటను విశ్లేషిస్తున్నాం...",
-    result: "నిర్ధారణ ఫలితం", disease: "గుర్తించిన వ్యాధి", confidence: "నమ్మకం",
-    treatment: "సూచించిన చికిత్స", prevention: "నివారణ చిట్కాలు",
-    healthy: "పంట ఆరోగ్యంగా కనిపిస్తుంది!", noDisease: "వ్యాధి గుర్తించబడలేదు",
-    tryAnother: "మరొక చిత్రం ప్రయత్నించండి", shareResult: "ఫలితం షేర్ చేయండి",
-    severity: "తీవ్రత", mild: "తేలికపాటి", moderate: "మధ్యస్థ", severe: "తీవ్రమైన", critical: "విమర్శాత్మక",
+    title: "పంట ఆరోగ్య నిర్ధారణ",
+    subtitle: "వ్యాధులను గుర్తించడానికి పంట ఫోటో అప్‌లోడ్ చేయండి",
+    uploadImage: "పంట చిత్రం అప్‌లోడ్ చేయండి",
+    dragDrop: "లాగి వదలండి లేదా క్లిక్ చేయండి",
+    supportedFormats: "మద్దతు: JPG, PNG, WEBP",
+    analyzing: "మీ పంటను విశ్లేషిస్తున్నాం...",
+    result: "నిర్ధారణ ఫలితం",
+    disease: "గుర్తించిన వ్యాధి",
+    confidence: "నమ్మకం",
+    treatment: "సూచించిన చికిత్స",
+    prevention: "నివారణ చిట్కాలు",
+    healthy: "పంట ఆరోగ్యంగా కనిపిస్తుంది!",
+    noDisease: "వ్యాధి గుర్తించబడలేదు",
+    tryAnother: "మరొక చిత్రం ప్రయత్నించండి",
+    shareResult: "ఫలితం షేర్ చేయండి",
+    severity: "తీవ్రత",
+    mild: "తేలికపాటి",
+    moderate: "మధ్యస్థ",
+    severe: "తీవ్రమైన",
+    critical: "విమర్శాత్మక",
     apiError: "AI సేవ అందుబాటులో లేదు. దయచేసి API కీని తనిఖీ చేయండి.",
-    selectCrop: "పంట రకం ఎంచుకోండి (ఐచ్ఛికం)", diagnoseBtn: "నా పంటను నిర్ధారించండి",
+    selectCrop: "పంట రకం ఎంచుకోండి (ఐచ్ఛికం)",
+    diagnoseBtn: "నా పంటను నిర్ధారించండి"
   },
   voice: {
     title: "వాయిస్ అసిస్టెంట్",
@@ -495,9 +592,8 @@ const te = {
     checkWeather: "వాతావరణం",
     myExpenses: "నా ఖర్చులు",
     openCrops: "పంటలు తెరవండి",
-    priceOf: "ధర",
+    priceOf: "ధర"
   },
-
   cropDetail: {
     overview: "అవలోకనం",
     expenses: "ఖర్చులు",
@@ -601,9 +697,8 @@ const te = {
     machinery: "యంత్రాలు",
     irrigation: "నీటిపారుదల",
     logistics: "రవాణా",
-    miscellaneous: "ఇతర",
+    miscellaneous: "ఇతర"
   },
-
   marketPage: {
     title: "మార్కెట్",
     searchPlaceholder: "పేరు, బ్రాండ్ ద్వారా వెతకండి (ఉదా., DAP, యూరియా, IFFCO)...",
@@ -632,21 +727,24 @@ const te = {
     orderDetails: "ఆర్డర్ వివరాలు",
     emptyCart: "మీ కార్ట్ ఖాళీగా ఉంది",
     continueShopping: "షాపింగ్ కొనసాగించండి",
+    pack: "పాకెట్",
+    inCart: "కార్ట్‌లో ఉంది",
+    adjustFilters: "మీ శోధన లేదా ఫిల్టర్‌లను సర్దుబాటు చేయడానికి ప్రయత్నించండి",
+    fertilizer: "ఎరువులు",
+    pesticide: "పురుగుమందు"
   },
-
   marketPricesAdvice: {
     pricesIncreasing: "ధరలు పెరుగుతున్నాయి. మంచి ధరల కోసం వేచి ఉండండి.",
     pricesDeclining: "ధరలు తగ్గుతున్నాయి. అమ్మకం ముందు MSP తనిఖీ చేయండి.",
     priceStable: "ధరలు స్థిరంగా ఉన్నాయి.",
     latestPrice: "తాజా ధర",
     maxPrice: "గరిష్ట ధర",
-    msp: "MSP",
+    msp: "కనీస మద్దతు ధర",
     perQuintal: "/ క్వింటాలు",
     mandi: "మండి",
     lastUpdated: "చివరిగా నవీకరించబడింది",
-    recentlyUpdated: "ఇటీవల నవీకరించబడింది",
+    recentlyUpdated: "ఇటీవల నవీకరించబడింది"
   },
-
   communityHub: {
     title: "కమ్యూనిటీ హబ్",
     subtitle: "తోటి రైతులతో కనెక్ట్ అవ్వండి",
@@ -666,9 +764,8 @@ const te = {
     online: "ఆన్‌లైన్",
     location: "స్థానం",
     p2p: "ప్రత్యక్షం",
-    group: "గ్రూప్",
+    group: "గ్రూప్"
   },
-
   chatbotQuick: {
     farmerQ1: "నా మొత్తం పంట ఖర్చులు ఎంత?",
     farmerQ2: "నా కోత సారాంశం చూపించు",
@@ -681,8 +778,8 @@ const te = {
     manufacturerQ3: "నేను ఎంత అమ్మాను?",
     customerQ1: "ఏ ఉత్పత్తులు అందుబాటులో ఉన్నాయి?",
     customerQ2: "నా ఆర్డర్‌లు ట్రాక్ చేయండి",
-    customerQ3: "ఉత్తమ సేంద్రీయ ఎరువులు?",
-  },
+    customerQ3: "ఉత్తమ సేంద్రీయ ఎరువులు?"
+  }
 };
 
 export default te;
