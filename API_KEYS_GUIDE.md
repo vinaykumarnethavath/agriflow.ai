@@ -12,7 +12,7 @@ This guide provides an exact, step-by-step walkthrough for obtaining **every API
 | **Gmail SMTP** | Email OTP (Local direct SMTP) | `SMTP_USER`, `SMTP_PASSWORD` | Free (Personal Gmail + App Password) |
 | **Resend** | Email OTP (Alternative HTTP API) | `RESEND_API_KEY`, `RESEND_FROM` | Free (3,000 emails/mo) |
 | **Fast2SMS** | Phone OTP (SMS in India) | `FAST2SMS_API_KEY` | Free ₹50 test credit |
-| **Groq AI** | Farmer Assistant & RAG Chatbot | `GROQ_API_KEY` | Free generous tier |
+| **Gemini AI** | Farmer Assistant & RAG Chatbot | `GEMINI_API_KEY` | Free generous tier |
 | **OpenWeatherMap**| Live Weather & Forecasts | `OPENWEATHER_API_KEY` | Free (1,000 calls/day) |
 | **NewsAPI** | Agricultural News Feed | `NEWS_API_KEY` | Free (100 requests/day) |
 | **OpenCage** | Geocoding & Reverse Location | `OPENCAGE_API_KEY` | Free (2,500 requests/day) |
@@ -115,21 +115,21 @@ This guide provides an exact, step-by-step walkthrough for obtaining **every API
 
 ---
 
-## 5. Groq Cloud — AI Chatbot & RAG LLM
+## 5. Google Gemini API — AI Chatbot, Voice & RAG LLM
 
-- **Official Page**: [https://console.groq.com/](https://console.groq.com/)
-- **Direct API Keys Page**: [https://console.groq.com/keys](https://console.groq.com/keys)
+- **Official Page**: [https://aistudio.google.com/](https://aistudio.google.com/)
+- **Direct API Keys Page**: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 
 ### Step-by-Step Instructions:
-1. Go to [https://console.groq.com/](https://console.groq.com/) and sign in with GitHub or Google.
-2. In the left navigation menu, click **API Keys**.
+1. Go to [https://aistudio.google.com/](https://aistudio.google.com/) and sign in with your Google account.
+2. In the left navigation menu, click **Get API key**.
 3. Click the **Create API Key** button.
-4. Enter an optional name like `AgriFlow-AI`.
-5. Click **Submit**.
-6. Immediately copy the key starting with `gsk_...` (Groq only displays this once).
+4. Select a Google Cloud project from the dropdown (or select "Create API key in a new project" if you don't have one).
+5. Click **Create API key in new project**.
+6. Once generated, click the copy icon next to your new key.
 7. Paste into `backend/.env` and Railway Variables:
    ```env
-   GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
    ```
 
 ---
