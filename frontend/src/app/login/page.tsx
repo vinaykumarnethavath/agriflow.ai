@@ -15,7 +15,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 type AuthMethod = "email" | "phone";
 
 export default function LoginPage() {
-    const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
+    const [authMethod, setAuthMethod] = useState<AuthMethod>("phone");
 
     // Email login state
     const emailRef = useRef<HTMLInputElement>(null);

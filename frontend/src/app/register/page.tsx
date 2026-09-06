@@ -16,7 +16,7 @@ type AuthMethod = "email" | "phone";
 type EmailStep = "form" | "otp";
 
 export default function RegisterPage() {
-    const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
+    const [authMethod, setAuthMethod] = useState<AuthMethod>("phone");
 
     // ── Email form state ──────────────────────────────────────────────────────
     const [emailStep, setEmailStep] = useState<EmailStep>("form");
