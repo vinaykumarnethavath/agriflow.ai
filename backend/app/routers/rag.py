@@ -1,5 +1,6 @@
 """
 RAG Chat Router — Privacy-Aware AI Assistant
+Enhanced with live external data aggregation.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,11 +19,13 @@ router = APIRouter(prefix="/rag", tags=["rag"])
 class ChatRequest(BaseModel):
     question: str
     lang: Optional[str] = "en"
+    lat: Optional[float] = None  # GPS latitude for location-aware weather
+    lon: Optional[float] = None  # GPS longitude for location-aware weather
 
 
 class ChatResponse(BaseModel):
     answer: str
-    source: str  # db_only | external | mixed
+    source: str  # db_only | external | external_live | mixed
     data_points: Optional[dict] = None
 
 
@@ -35,6 +38,14 @@ async def chat(
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
-    result = await handle_chat(current_user, request.question.strip(), session, target_lang=request.lang or "en")
+    result = await handle_chat(
+        current_user,
+        request.question.strip(),
+        session,
+        target_lang=request.lang or "en",
+        lat=request.lat,
+        lon=request.lon,
+    )
     return ChatResponse(**result)
+
 

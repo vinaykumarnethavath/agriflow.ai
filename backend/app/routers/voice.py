@@ -154,7 +154,23 @@ If the user wants to perform an action (like add_crop or add_expense) but is MIS
 6. For expense amounts, parse numbers from any format: "500", "five hundred", "పంచ వందలు", "पाँच सौ"
 7. When adding crops, infer reasonable defaults: season based on month, status="active"
 8. For crop names, capitalize properly: "rice" → "Rice", "tomato" → "Tomato"
-"""
+9. When LIVE EXTERNAL DATA is provided (weather, prices, news, schemes), use that data to give accurate, real-time answers. Do NOT make up weather/price/news data — use only what is provided.
+"""  # noqa: E501
+
+# Keywords that indicate the voice query needs real-time external data
+VOICE_REALTIME_KEYWORDS = [
+    # Weather
+    "weather", "rain", "temperature", "forecast", "mausam", "barish",
+    "monsoon", "frost", "cold", "hot", "humidity", "varsha", "vana",
+    # Market prices
+    "price", "rate", "mandi", "market price", "bhav", "dham",
+    "wheat price", "rice price", "cotton price",
+    # News
+    "news", "headline", "khabar", "samachar", "update",
+    # Government schemes
+    "scheme", "yojana", "subsidy", "pm-kisan", "pm kisan", "kisan",
+    "loan", "insurance", "pmfby", "kcc",
+]
 
 
 # ── Voice Processing Endpoint ────────────────────────────────────────────────
@@ -195,6 +211,28 @@ async def process_voice(
         f"User said: \"{transcript}\"\n\n"
         f"Parse this voice command into a JSON action considering the conversation history."
     )
+
+    # Check if the voice query needs real-time external data
+    transcript_lower = transcript.lower()
+    external_data_text = ""
+    if any(kw in transcript_lower for kw in VOICE_REALTIME_KEYWORDS):
+        try:
+            from ..services.external_data_service import (
+                gather_all_external_context,
+                format_external_context_for_llm,
+            )
+            external_data = await gather_all_external_context(
+                user=current_user, session=session, question=transcript
+            )
+            external_data_text = format_external_context_for_llm(external_data)
+            if external_data_text:
+                user_message += (
+                    f"\n\nLIVE EXTERNAL DATA (use this for accurate real-time answers):\n"
+                    f"{external_data_text}"
+                )
+                print(f"[Voice] Injected live external data for real-time query")
+        except Exception as e:
+            print(f"[Voice] External data fetch error: {e}")
 
     candidate_models = [
         os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),

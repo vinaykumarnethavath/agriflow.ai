@@ -4,15 +4,20 @@ Privacy-Aware RAG Service for AgriFlow
 Combines local database knowledge with Groq LLM for external knowledge,
 while strictly protecting personal/sensitive information.
 
+Now enhanced with LIVE EXTERNAL DATA from APIs (weather, news, market prices,
+government schemes, learning) via the External Data Aggregation Service.
+
 Source Types:
-  - db_only  (🟢 Green)  → Personal data, answered from DB only
-  - external (🟣 Purple) → General knowledge from Groq LLM
-  - mixed    (🔵 Blue)   → AI reasoning + anonymised DB context
+  - db_only        (🟢 Green)  → Personal data, answered from DB only
+  - external       (🟣 Purple) → General knowledge from Groq LLM
+  - external_live  (🟠 Orange) → Real-time data from APIs + Groq LLM
+  - mixed          (🔵 Blue)   → AI reasoning + anonymised DB context + live data
 """
 
 import os
 import re
 import json
+import asyncio
 import traceback
 from typing import Optional
 from datetime import datetime, date
@@ -56,6 +61,31 @@ EXTERNAL_KEYWORDS = [
     "benefit of", "disadvantage", "season for", "when to sow",
     "when to harvest", "nutrient", "compost", "vermiculture",
     "drip irrigation", "greenhouse", "hydroponics",
+]
+
+# Keywords that signal real-time / live data needed from external APIs
+# These questions CANNOT be answered by the LLM's training data alone
+EXTERNAL_LIVE_KEYWORDS = [
+    # Weather (real-time)
+    "today's weather", "today weather", "current weather", "weather today",
+    "aaj ka mausam", "mausam", "aaj mausam", "temperature today",
+    "today temperature", "will it rain", "rain today", "barish",
+    "tomorrow weather", "kal mausam", "forecast today",
+    # Market prices (real-time)
+    "current price", "today's price", "today price", "price today",
+    "mandi price", "mandi rate", "market rate", "market price",
+    "aaj ka bhav", "bhav", "rate today", "wheat price", "rice price",
+    "cotton price", "maize price", "soybean price", "mustard price",
+    "onion price", "tomato price", "chilli price",
+    # News (real-time)
+    "latest news", "today news", "today's news", "recent news",
+    "agriculture news", "agri news", "farming news", "khabar",
+    "samachar", "taza khabar", "aaj ki khabar",
+    # Government schemes (semi-real-time)
+    "government scheme", "sarkari yojana", "subsidy available",
+    "pm-kisan status", "pm kisan", "pmfby", "kisan credit",
+    "kcc", "loan scheme", "insurance scheme", "pension scheme",
+    "active scheme", "available scheme",
 ]
 
 # Keywords that signal database queries about the user's own data
@@ -128,13 +158,14 @@ def user_has_relevant_crop(crop_names: list[str], db_context: dict) -> bool:
 
 
 def classify_question(question: str) -> str:
-    """Classify user question into: personal, database, external, or mixed.
+    """Classify user question into: personal, database, external_live, external, or mixed.
 
     Classification priority:
-      1. personal  — sensitive profile/account data
-      2. mixed     — user's data + AI advice/recommendations needed together
-      3. database  — pure data lookups about user's own records
-      4. external  — general agricultural knowledge
+      1. personal       — sensitive profile/account data
+      2. external_live  — questions needing real-time API data (weather, prices, news, schemes)
+      3. mixed          — user's data + AI advice/recommendations needed together
+      4. database       — pure data lookups about user's own records
+      5. external       — general agricultural knowledge (LLM training data is sufficient)
     """
     q = question.lower().strip()
 
@@ -143,7 +174,17 @@ def classify_question(question: str) -> str:
     if personal_score >= 1:
         return "personal"
 
-    # --- 2. Score each category ---
+    # --- 2. Check if the question needs LIVE external data ---
+    live_score = sum(1 for kw in EXTERNAL_LIVE_KEYWORDS if kw in q)
+    if live_score >= 1:
+        # Also check if the question references user's own data
+        db_score_check = sum(1 for kw in DATABASE_KEYWORDS if kw in q)
+        mixed_score_check = sum(1 for kw in MIXED_SIGNAL_KEYWORDS if kw in q)
+        if db_score_check > 0 or mixed_score_check > 0:
+            return "mixed"  # Needs both live data AND user data
+        return "external_live"
+
+    # --- 3. Score each category ---
     db_score = sum(1 for kw in DATABASE_KEYWORDS if kw in q)
     ext_score = sum(1 for kw in EXTERNAL_KEYWORDS if kw in q)
     mixed_score = sum(1 for kw in MIXED_SIGNAL_KEYWORDS if kw in q)
@@ -152,7 +193,7 @@ def classify_question(question: str) -> str:
     indirect_db = any(word in q for word in
                       ["my", "i have", "i spent", "i sold", "i bought"])
 
-    # --- 3. Mixed takes priority when mixed-signal keywords are present ---
+    # --- 4. Mixed takes priority when mixed-signal keywords are present ---
     # If the question has mixed-signal keywords, it means the user wants
     # AI reasoning combined with their personal data.
     if mixed_score >= 1:
@@ -165,17 +206,17 @@ def classify_question(question: str) -> str:
     if db_score > 0 and ext_score > 0:
         return "mixed"
 
-    # --- 4. Pure database ---
+    # --- 5. Pure database ---
     if db_score > 0:
         return "database"
     if indirect_db:
         return "database"
 
-    # --- 5. Pure external ---
+    # --- 6. Pure external ---
     if ext_score > 0:
         return "external"
 
-    # --- 6. Default to external for general questions ---
+    # --- 7. Default to external for general questions ---
     return "external"
 
 
@@ -474,13 +515,15 @@ async def call_groq(
     strict_data_only: bool = False,
     mixed_mode: bool = False,
     target_lang: str = "en",
+    external_context: Optional[str] = None,
 ) -> str:
     """Call Groq LLM with sanitised context. Returns the LLM text answer.
 
     Args:
-        strict_data_only: When True, the LLM must ONLY use DB data (no advice).
-        mixed_mode:       When True, the LLM should blend DB data WITH AI advice.
-        target_lang:      Target language code (e.g. 'te', 'hi', 'ta', etc.)
+        strict_data_only:  When True, the LLM must ONLY use DB data (no advice).
+        mixed_mode:        When True, the LLM should blend DB data WITH AI advice.
+        target_lang:       Target language code (e.g. 'te', 'hi', 'ta', etc.)
+        external_context:  Pre-formatted real-time external data (weather, news, prices, schemes).
     """
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key or api_key == "your-groq-api-key-here":
@@ -526,7 +569,32 @@ async def call_groq(
             "\n7. When listing items, include all relevant details from the data."
         )
 
+    # Inject external real-time data if available
+    if external_context:
+        system_prompt += (
+            "\n\nLIVE EXTERNAL DATA — IMPORTANT:"
+            "\nYou have been provided with REAL-TIME data fetched just now from live APIs."
+            "\nThis includes current weather, market prices, news headlines, and government schemes."
+            "\nWhen the user asks about weather, prices, news, or schemes:"
+            "\n1. Use the LIVE DATA provided below — do NOT use your training data for these topics."
+            "\n2. Cite specific numbers, dates, and sources from the live data."
+            "\n3. If the live data doesn't cover the user's specific question, mention what you do have "
+            "and supplement with your general knowledge, clearly marking it as general advice."
+            "\n4. Present the information in a helpful, farmer-friendly format."
+        )
+
     messages = [{"role": "system", "content": system_prompt}]
+
+    # Inject external context as a separate message block
+    if external_context:
+        messages.append({
+            "role": "user",
+            "content": f"Here is LIVE real-time data fetched just now from external APIs:\n\n{external_context}"
+        })
+        messages.append({
+            "role": "assistant",
+            "content": "I have the latest real-time data loaded. I will use this live information to give you accurate, up-to-date answers."
+        })
 
     if context:
         safe_context = sanitize_context(context)
@@ -585,11 +653,24 @@ async def call_groq(
 # 4. RAG Orchestrator
 # ---------------------------------------------------------------------------
 
-async def handle_chat(user: User, question: str, session: AsyncSession, target_lang: str = "en") -> dict:
+async def handle_chat(
+    user: User,
+    question: str,
+    session: AsyncSession,
+    target_lang: str = "en",
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
+) -> dict:
     """
     Main entry point. Classifies the question, queries DB if needed,
-    calls Groq if needed, translates answer into target_lang, and returns a structured response.
+    fetches live external data if needed, calls Groq, translates answer
+    into target_lang, and returns a structured response.
     """
+    from .external_data_service import (
+        gather_all_external_context,
+        format_external_context_for_llm,
+    )
+
     classification = classify_question(question)
     role = user.role if isinstance(user.role, str) else user.role.value
 
@@ -682,6 +763,24 @@ async def handle_chat(user: User, question: str, session: AsyncSession, target_l
                 "data_points": db_context,
             }
 
+    # ----- EXTERNAL_LIVE: real-time data from APIs + Groq -----
+    elif classification == "external_live":
+        print(f"[RAG] Fetching live external data for real-time question...")
+        external_data = await gather_all_external_context(
+            user=user, session=session, lat=lat, lon=lon, question=question
+        )
+        external_text = format_external_context_for_llm(external_data)
+
+        answer = await call_groq(
+            question, role=role, target_lang=target_lang,
+            external_context=external_text if external_text else None
+        )
+        result = {
+            "answer": answer,
+            "source": "external_live",
+            "data_points": None,
+        }
+
     # ----- EXTERNAL: pure general knowledge from Groq -----
     elif classification == "external":
         answer = await call_groq(question, role=role, target_lang=target_lang)
@@ -691,30 +790,41 @@ async def handle_chat(user: User, question: str, session: AsyncSession, target_l
             "data_points": None,
         }
 
-    # ----- MIXED: combine DB context with AI reasoning -----
+    # ----- MIXED: combine DB context + live external data + AI reasoning -----
     else:
-        # Fetch DB data first so we can check data-awareness
-        db_context = await query_database_context(user, question, session)
+        # Fetch DB data and external data in parallel
+        db_task = query_database_context(user, question, session)
+        ext_task = gather_all_external_context(
+            user=user, session=session, lat=lat, lon=lon, question=question
+        )
+        db_context, external_data = await asyncio.gather(db_task, ext_task)
+        external_text = format_external_context_for_llm(external_data)
 
         mentioned_crops = extract_crop_names_from_question(question)
         if mentioned_crops and db_context:
             has_crop = user_has_relevant_crop(mentioned_crops, db_context)
             if not has_crop:
                 print(f"[RAG] User asked about {mentioned_crops} but doesn't have them → downgrading to external")
-                answer = await call_groq(question, role=role, target_lang=target_lang)
+                answer = await call_groq(
+                    question, role=role, target_lang=target_lang,
+                    external_context=external_text if external_text else None
+                )
                 result = {
                     "answer": answer,
-                    "source": "external",
+                    "source": "external_live" if external_text else "external",
                     "data_points": None,
                 }
 
         if result is None:
             if not db_context:
                 print(f"[RAG] No DB context found → downgrading to external")
-                answer = await call_groq(question, role=role, target_lang=target_lang)
+                answer = await call_groq(
+                    question, role=role, target_lang=target_lang,
+                    external_context=external_text if external_text else None
+                )
                 result = {
                     "answer": answer,
-                    "source": "external",
+                    "source": "external_live" if external_text else "external",
                     "data_points": None,
                 }
             else:
@@ -723,7 +833,8 @@ async def handle_chat(user: User, question: str, session: AsyncSession, target_l
                     context=db_context,
                     role=role,
                     mixed_mode=True,
-                    target_lang=target_lang
+                    target_lang=target_lang,
+                    external_context=external_text if external_text else None,
                 )
                 result = {
                     "answer": answer,
