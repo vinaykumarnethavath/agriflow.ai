@@ -14,10 +14,12 @@ import api from "./api";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface VoiceActionResponse {
-    action: "navigate" | "api_call" | "fill_form" | "show_answer" | "change_language";
+    action: "navigate" | "api_call" | "fill_form" | "show_answer" | "change_language" | "ask_followup";
     params: Record<string, any>;
     response_text: string;
     navigate_to: string | null;
+    execution_result?: any;
+    requires_followup?: boolean;
 }
 
 export interface VoiceExecutionResult {
@@ -69,7 +71,23 @@ export async function executeVoiceAction(
             };
 
         case "api_call":
+            // If the server already executed this action, return the result directly
+            if (action.execution_result) {
+                return {
+                    success: action.execution_result.success ?? true,
+                    message: action.response_text,
+                    navigateTo: action.navigate_to,
+                    data: action.execution_result.data,
+                };
+            }
             return await handleApiCall(action);
+
+        case "ask_followup":
+            return {
+                success: true,
+                message: action.response_text,
+                navigateTo: action.navigate_to,
+            };
 
         case "fill_form":
             // Dispatch a custom event that page components can listen for

@@ -56,13 +56,20 @@ class VoiceAction(BaseModel):
 
 SYSTEM_PROMPT = """You are the AgriFlow Voice Assistant — a powerful AI that helps Indian farmers, shop owners, and manufacturers manage their farm/business entirely by voice.
 
-The user speaks in any Indian language (English, Hindi, Telugu, Tamil, Kannada, Marathi, Bengali, Gujarati, Punjabi). You must understand ALL of them.
+The user can speak in any Indian language (English, Hindi, Telugu, Tamil, Kannada, Marathi, Bengali, Gujarati, Punjabi) or select their preferred language. You must understand ALL of them.
+
+CRITICAL LANGUAGE RULE:
+You MUST respond with `response_text` in the user's SELECTED APP LANGUAGE specified in the prompt.
+- If selected language is Telugu, ask all questions, follow-ups, and answers in Telugu (తెలుగు).
+- If selected language is Hindi, ask all questions, follow-ups, and answers in Hindi (हिन्दी).
+- If selected language is Tamil, Kannada, Marathi, Bengali, Gujarati, Punjabi, respond in that language.
+- Only respond in English if the selected language is English.
 
 You MUST respond with ONLY a valid JSON object (no markdown, no explanation, no extra text). The JSON must have these fields:
 {
   "action": "navigate" | "api_call" | "fill_form" | "show_answer" | "change_language" | "ask_followup",
   "params": { ... },
-  "response_text": "Short spoken response in the SAME LANGUAGE the user spoke",
+  "response_text": "Short spoken response STRICTLY in the user's SELECTED language",
   "navigate_to": "/path/to/page" or null,
   "requires_followup": false
 }
@@ -355,11 +362,29 @@ async def process_voice(
             print(f"[Voice] External data fetch error: {e}")
 
     # ── 4. Build the user message ─────────────────────────────────────────
+    lang_code = request.locale or "en"
+    lang_name_map = {
+        "en": "English",
+        "hi": "Hindi (हिन्दी)",
+        "te": "Telugu (తెలుగు)",
+        "ta": "Tamil (தமிழ்)",
+        "kn": "Kannada (ಕನ್ನಡ)",
+        "mr": "Marathi (मराठी)",
+        "bn": "Bengali (বাংলা)",
+        "gu": "Gujarati (ગુજરાતી)",
+        "pa": "Punjabi (ਪੰਜਾਬੀ)",
+    }
+    target_lang_name = lang_name_map.get(lang_code, "English")
+
     user_message = (
         f"User role: {role}\n"
         f"Current page: {request.current_page}\n"
-        f"Language: {request.locale}\n"
+        f"Target App Language: {target_lang_name} (code: {lang_code})\n"
         f"Current date/time: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
+        f"MANDATORY INSTRUCTION: You MUST provide 'response_text' strictly in {target_lang_name}.\n"
+        f"- If asking a question or follow-up, write the question in {target_lang_name}.\n"
+        f"- If answering, provide numbers and details in {target_lang_name}.\n"
+        f"- If confirming an action, write the confirmation in {target_lang_name}.\n"
     )
 
     if db_context_text:
@@ -430,7 +455,7 @@ async def process_voice(
 
         # Auto-resolve crop_id from crop_name
         crop_name = data.get("crop_name") or data.get("name", "")
-        if crop_name and "crop_id" not in data and endpoint in (
+        if session and crop_name and "crop_id" not in data and endpoint in (
             "add_expense", "add_harvest", "add_sale", "update_crop"
         ):
             stmt = select(Crop).where(
@@ -477,11 +502,22 @@ async def process_voice(
             traceback.print_exc()
             parsed["response_text"] = f"Sorry, there was an error: {str(e)}"
 
-    # ── 7. Build response ─────────────────────────────────────────────────
+    # ── 7. Multilingual Guard: Ensure response_text matches selected locale ──
+    final_text = parsed.get("response_text", "Done.")
+    target_locale = request.locale or "en"
+    if target_locale != "en" and final_text and final_text.strip():
+        try:
+            from .translate import translate_text
+            # Translate whatever text was generated (including execution messages, errors, follow-ups)
+            final_text = await translate_text(final_text, target_lang=target_locale, source_lang="en")
+        except Exception as e:
+            print(f"[Voice] Multilingual guard translation error: {e}")
+
+    # ── 8. Build response ─────────────────────────────────────────────────
     return VoiceAction(
         action=parsed.get("action", "show_answer"),
         params=parsed.get("params", {}),
-        response_text=parsed.get("response_text", "Done."),
+        response_text=final_text,
         navigate_to=parsed.get("navigate_to"),
         execution_result=execution_result,
         requires_followup=parsed.get("requires_followup", False),

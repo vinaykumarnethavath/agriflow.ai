@@ -38,7 +38,7 @@ async function flushBatch() {
       const chunk = group.slice(i, i + chunkSize);
       const texts = chunk.map((g) => g.text);
       try {
-        const { data } = await api.post("/api/translate", {
+        const { data } = await api.post("/api/translate/", {
           texts,
           target_lang: locale,
           source_lang: "en",
@@ -46,11 +46,13 @@ async function flushBatch() {
         const translations: string[] = data?.translations || texts;
         chunk.forEach((item, idx) => {
           const translated = translations[idx] || item.text;
-          translationCache.set(`${locale}::${item.text}`, translated);
+          if (translated && translated.trim().toLowerCase() !== item.text.trim().toLowerCase()) {
+            translationCache.set(`${locale}::${item.text}`, translated);
+          }
           item.resolve(translated);
         });
       } catch (err) {
-        // On error, resolve with original
+        // On error, resolve with original without poisoning cache
         chunk.forEach((item) => item.resolve(item.text));
       }
     }
@@ -122,6 +124,14 @@ export function T({ k, children }: TProps) {
     const cacheKey = `${locale}::${children}`;
     if (translationCache.has(cacheKey)) {
       setTranslatedText(translationCache.get(cacheKey)!);
+      setLoading(false);
+      return;
+    }
+
+    // Check built-in common agricultural dictionary (synchronous)
+    const commonMatch = t(children);
+    if (commonMatch && commonMatch !== children) {
+      setTranslatedText(commonMatch);
       setLoading(false);
       return;
     }
