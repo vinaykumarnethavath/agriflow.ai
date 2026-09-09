@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from sqlalchemy.orm import selectinload
-from typing import List
+from typing import List, Optional
 
 from ..database import get_session
 from ..deps import get_current_user
